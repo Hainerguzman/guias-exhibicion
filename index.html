@@ -288,8 +288,9 @@ async function buildPDF(g) {
         margin: {left:MARGIN, right:MARGIN},
         head: [['', 'Código', 'Producto', 'Cant.', 'OC']],
         body: pisoProds.map(function(p){ return ['', p.c, p.n, p.q, p.o]; }),
-        styles: {fontSize:8, cellPadding:2, overflow:'linebreak', minCellHeight:IMG_COL},
-        headStyles: {fillColor:DARK, textColor:[255,255,255], fontStyle:'bold', fontSize:7.5},
+        styles: {fontSize:8, cellPadding:2, overflow:'linebreak'},
+        bodyStyles: {minCellHeight:IMG_COL},
+        headStyles: {fillColor:DARK, textColor:[255,255,255], fontStyle:'bold', fontSize:7.5, minCellHeight:6},
         columnStyles: {
           0:{cellWidth:IMG_COL},
           1:{cellWidth:22},
@@ -398,8 +399,9 @@ async function downloadAllPDF() {
           startY: y, margin:{left:MARGIN,right:MARGIN},
           head:[['', 'Código','Producto','Cant.','OC']],
           body:pisoProds.map(function(p){ return ['',p.c,p.n,p.q,p.o]; }),
-          styles:{fontSize:8,cellPadding:2,overflow:'linebreak',minCellHeight:IMG_COL},
-          headStyles:{fillColor:DARK,textColor:[255,255,255],fontStyle:'bold',fontSize:7.5},
+          styles:{fontSize:8,cellPadding:2,overflow:'linebreak'},
+          bodyStyles:{minCellHeight:IMG_COL},
+          headStyles:{fillColor:DARK,textColor:[255,255,255],fontStyle:'bold',fontSize:7.5,minCellHeight:6},
           columnStyles:{0:{cellWidth:IMG_COL},1:{cellWidth:22},2:{cellWidth:TW-IMG_COL-22-14-14},3:{cellWidth:14,halign:'center'},4:{cellWidth:14,halign:'center'}},
           alternateRowStyles:{fillColor:[250,250,250]},
           didDrawCell:function(data){
