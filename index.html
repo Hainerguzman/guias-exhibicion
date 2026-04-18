@@ -230,11 +230,39 @@ function closeModal(e) {
   }
 }
 
-function buildPDF(g) {
+// Pre-load product images as base64 data URLs
+async function loadImgCache(prods) {
+  var cache = {};
+  await Promise.all(prods.filter(function(p){ return p.img; }).map(function(prod) {
+    return fetch(prod.img, {mode:'cors'})
+      .then(function(r){ return r.blob(); })
+      .then(function(blob){
+        return new Promise(function(resolve){
+          var reader = new FileReader();
+          reader.onload = function(e){ cache[prod.c] = e.target.result; resolve(); };
+          reader.onerror = resolve;
+          reader.readAsDataURL(blob);
+        });
+      })
+      .catch(function(){});
+  }));
+  return cache;
+}
+
+async function buildPDF(g) {
   var jsPDF = window.jspdf.jsPDF;
   var doc = new jsPDF({orientation:'p', unit:'mm', format:'a4'});
   var RED = [200,16,46], DARK = [26,26,46];
   var W = 210, MARGIN = 15, TW = W - 2*MARGIN;
+  var IMG_COL = 16; // mm width for image column
+
+  // Gather all products and pre-fetch their images
+  var pisoKeys = Object.keys(g.pisos).sort();
+  var allProds = [];
+  pisoKeys.forEach(function(p){ allProds = allProds.concat(g.pisos[p]); });
+  var imgCache = await loadImgCache(allProds);
+
+  // Guide header
   doc.setFillColor(RED[0],RED[1],RED[2]);
   doc.roundedRect(MARGIN, 15, TW, 18, 3, 3, 'F');
   doc.setTextColor(255,255,255);
@@ -242,8 +270,8 @@ function buildPDF(g) {
   doc.text(g.code, MARGIN+4, 26.5);
   doc.setFontSize(11); doc.setFont('helvetica','normal');
   doc.text(g.name.toUpperCase(), MARGIN+44, 26.5);
+
   var y = 40;
-  var pisoKeys = Object.keys(g.pisos).sort();
   for (var i = 0; i < pisoKeys.length; i++) {
     var piso = pisoKeys[i];
     var prods = g.pisos[piso];
@@ -254,30 +282,60 @@ function buildPDF(g) {
     doc.setFontSize(9); doc.setFont('helvetica','bold');
     doc.text('  PISO ' + piso, MARGIN+2, y+5);
     y += 9;
-    doc.autoTable({
-      startY: y,
-      margin: {left:MARGIN, right:MARGIN},
-      head: [['Código','Producto','Cant.','OC']],
-      body: prods.map(function(p){ return [p.c, p.n, p.q, p.o]; }),
-      styles: {fontSize:8, cellPadding:2.5, overflow:'linebreak'},
-      headStyles: {fillColor:DARK, textColor:[255,255,255], fontStyle:'bold', fontSize:7.5},
-      columnStyles: {0:{cellWidth:22}, 1:{cellWidth:TW-22-14-14}, 2:{cellWidth:14,halign:'center'}, 3:{cellWidth:14,halign:'center'}},
-      alternateRowStyles: {fillColor:[250,250,250]},
-      didDrawPage: function(data) {
-        doc.setFontSize(7); doc.setTextColor(150,150,150);
-        doc.text('JAMAR — Guías de Exhibición', MARGIN, 290);
-        doc.text('Pág. ' + doc.internal.getCurrentPageInfo().pageNumber, W-MARGIN, 290, {align:'right'});
-      }
-    });
+    (function(pisoProds, pisoImgCache, pisoDoc) {
+      pisoDoc.autoTable({
+        startY: y,
+        margin: {left:MARGIN, right:MARGIN},
+        head: [['', 'Código', 'Producto', 'Cant.', 'OC']],
+        body: pisoProds.map(function(p){ return ['', p.c, p.n, p.q, p.o]; }),
+        styles: {fontSize:8, cellPadding:2, overflow:'linebreak', minCellHeight:IMG_COL},
+        headStyles: {fillColor:DARK, textColor:[255,255,255], fontStyle:'bold', fontSize:7.5},
+        columnStyles: {
+          0:{cellWidth:IMG_COL},
+          1:{cellWidth:22},
+          2:{cellWidth:TW-IMG_COL-22-14-14},
+          3:{cellWidth:14, halign:'center'},
+          4:{cellWidth:14, halign:'center'}
+        },
+        alternateRowStyles: {fillColor:[250,250,250]},
+        didDrawCell: function(data) {
+          if (data.column.index === 0 && data.section === 'body') {
+            var prod = pisoProds[data.row.index];
+            var imgData = prod && pisoImgCache[prod.c];
+            if (imgData) {
+              var pad = 1.5;
+              var sz = data.cell.height - pad*2;
+              try { pisoDoc.addImage(imgData, 'JPEG', data.cell.x+pad, data.cell.y+pad, sz, sz); } catch(e){}
+            }
+          }
+        },
+        didDrawPage: function(data) {
+          pisoDoc.setFontSize(7); pisoDoc.setTextColor(150,150,150);
+          pisoDoc.text('JAMAR — Guías de Exhibición', MARGIN, 290);
+          pisoDoc.text('Pág. ' + pisoDoc.internal.getCurrentPageInfo().pageNumber, W-MARGIN, 290, {align:'right'});
+        }
+      });
+    })(prods, imgCache, doc);
     y = doc.lastAutoTable.finalY + 8;
   }
   return doc;
 }
 
-function genPDF(code) {
+async function genPDF(code) {
   var g = getGuide(code);
   if (!g) return;
-  buildPDF(g).save(code + '_' + g.name.replace(/[^a-zA-Z0-9]/g,'_') + '.pdf');
+  // Show loading state on buttons
+  var cardBtn = document.querySelector('[data-code="'+code+'"][data-action="pdf"]');
+  var mBtn = document.getElementById('mPdfBtn');
+  var origCard = cardBtn ? cardBtn.innerHTML : null;
+  if (cardBtn) { cardBtn.innerHTML = 'Generando…'; cardBtn.disabled = true; }
+  if (mBtn) { mBtn.innerHTML = 'Generando…'; mBtn.disabled = true; }
+  try {
+    var doc = await buildPDF(g);
+    doc.save(code + '_' + g.name.replace(/[^a-zA-Z0-9]/g,'_') + '.pdf');
+  } catch(e) { console.error(e); }
+  if (cardBtn) { cardBtn.innerHTML = origCard; cardBtn.disabled = false; }
+  if (mBtn) { mBtn.innerHTML = '&#8595; Descargar PDF'; mBtn.disabled = false; }
 }
 
 function genXLSX(code) {
@@ -302,13 +360,21 @@ async function downloadAllPDF() {
   var fill = document.getElementById('progressFill');
   bar.style.display = 'block';
   var jsPDF = window.jspdf.jsPDF;
-  var master = new jsPDF({orientation:'p', unit:'mm', format:'a4'});
   var RED = [200,16,46], DARK = [26,26,46];
   var W = 210, MARGIN = 15, TW = W - 2*MARGIN;
+  var IMG_COL = 16;
+  var master = new jsPDF({orientation:'p', unit:'mm', format:'a4'});
+  var firstGuide = true;
   for (var i = 0; i < GUIDES.length; i++) {
     var g = GUIDES[i];
     fill.style.width = ((i/GUIDES.length)*100) + '%';
-    if (i > 0) master.addPage();
+    // Pre-fetch images for this guide
+    var allProds = [];
+    var pisoKeys = Object.keys(g.pisos).sort();
+    pisoKeys.forEach(function(pk){ allProds = allProds.concat(g.pisos[pk]); });
+    var imgCache = await loadImgCache(allProds);
+    if (!firstGuide) master.addPage();
+    firstGuide = false;
     master.setFillColor(RED[0],RED[1],RED[2]);
     master.roundedRect(MARGIN, 15, TW, 18, 3, 3, 'F');
     master.setTextColor(255,255,255);
@@ -317,7 +383,6 @@ async function downloadAllPDF() {
     master.setFontSize(11); master.setFont('helvetica','normal');
     master.text(g.name.toUpperCase(), MARGIN+44, 26.5);
     var y = 40;
-    var pisoKeys = Object.keys(g.pisos).sort();
     for (var j = 0; j < pisoKeys.length; j++) {
       var piso = pisoKeys[j];
       var prods = g.pisos[piso];
@@ -328,23 +393,32 @@ async function downloadAllPDF() {
       master.setFontSize(9); master.setFont('helvetica','bold');
       master.text('  PISO ' + piso, MARGIN+2, y+5);
       y += 9;
-      master.autoTable({
-        startY: y, margin:{left:MARGIN,right:MARGIN},
-        head:[['Código','Producto','Cant.','OC']],
-        body:prods.map(function(p){ return [p.c,p.n,p.q,p.o]; }),
-        styles:{fontSize:8,cellPadding:2.5},
-        headStyles:{fillColor:DARK,textColor:[255,255,255],fontStyle:'bold',fontSize:7.5},
-        columnStyles:{0:{cellWidth:22},1:{cellWidth:TW-22-14-14},2:{cellWidth:14,halign:'center'},3:{cellWidth:14,halign:'center'}},
-        alternateRowStyles:{fillColor:[250,250,250]},
-        didDrawPage:function(data){
-          master.setFontSize(7); master.setTextColor(150,150,150);
-          master.text('JAMAR — Guías de Exhibición', MARGIN, 290);
-          master.text('Pág. '+master.internal.getCurrentPageInfo().pageNumber, W-MARGIN, 290, {align:'right'});
-        }
-      });
+      (function(pisoProds, pisoCache, masterDoc) {
+        masterDoc.autoTable({
+          startY: y, margin:{left:MARGIN,right:MARGIN},
+          head:[['', 'Código','Producto','Cant.','OC']],
+          body:pisoProds.map(function(p){ return ['',p.c,p.n,p.q,p.o]; }),
+          styles:{fontSize:8,cellPadding:2,overflow:'linebreak',minCellHeight:IMG_COL},
+          headStyles:{fillColor:DARK,textColor:[255,255,255],fontStyle:'bold',fontSize:7.5},
+          columnStyles:{0:{cellWidth:IMG_COL},1:{cellWidth:22},2:{cellWidth:TW-IMG_COL-22-14-14},3:{cellWidth:14,halign:'center'},4:{cellWidth:14,halign:'center'}},
+          alternateRowStyles:{fillColor:[250,250,250]},
+          didDrawCell:function(data){
+            if(data.column.index===0 && data.section==='body'){
+              var prod=pisoProds[data.row.index];
+              var imgData=prod && pisoCache[prod.c];
+              if(imgData){var pad=1.5,sz=data.cell.height-pad*2;try{masterDoc.addImage(imgData,'JPEG',data.cell.x+pad,data.cell.y+pad,sz,sz);}catch(e){}}
+            }
+          },
+          didDrawPage:function(data){
+            masterDoc.setFontSize(7);masterDoc.setTextColor(150,150,150);
+            masterDoc.text('JAMAR — Guías de Exhibición',MARGIN,290);
+            masterDoc.text('Pág. '+masterDoc.internal.getCurrentPageInfo().pageNumber,W-MARGIN,290,{align:'right'});
+          }
+        });
+      })(prods, imgCache, master);
       y = master.lastAutoTable.finalY + 8;
     }
-    await new Promise(function(r){ setTimeout(r, 10); });
+    await new Promise(function(r){ setTimeout(r, 5); });
   }
   fill.style.width = '100%';
   master.save('Guias_Exhibicion_Jamar_Completo.pdf');
