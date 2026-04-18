@@ -33,6 +33,9 @@ header{background:var(--red);color:#fff;padding:0 24px;display:flex;align-items:
 .ccode{font-size:19px;font-weight:900;color:#fff;min-width:58px}
 .cname{font-size:11.5px;color:rgba(255,255,255,.9);line-height:1.35;flex:1}
 .cb{padding:10px 14px;flex:1}
+.cimg-row{display:flex;gap:6px;overflow-x:auto;padding:8px 14px 4px;scrollbar-width:thin}
+.cimg-row img{width:64px;height:64px;object-fit:contain;border-radius:6px;border:1px solid var(--border);background:#fafafa;flex-shrink:0}
+.cimg-row img.placeholder{display:flex;align-items:center;justify-content:center;background:#f5f5f5}
 .meta{display:flex;gap:8px;flex-wrap:wrap}
 .pill{display:flex;align-items:center;gap:4px;font-size:11px;color:#555;background:#F5F5F5;padding:3px 9px;border-radius:20px}
 .cf{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--border);background:#FAFAFA}
@@ -54,9 +57,10 @@ header{background:var(--red);color:#fff;padding:0 24px;display:flex;align-items:
 .piso-title{font-size:11px;font-weight:700;color:#fff;background:var(--dark);padding:5px 10px;border-radius:6px;margin:10px 0 6px;display:inline-block;letter-spacing:.5px}
 table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:4px}
 th{background:#F5F5F5;font-weight:700;padding:7px 8px;text-align:left;border-bottom:2px solid var(--dark);font-size:11px}
-td{padding:6px 8px;border-bottom:1px solid #EEE}
+td{padding:6px 8px;border-bottom:1px solid #EEE;vertical-align:middle}
 tr:nth-child(even){background:#FAFAFA}
 td:last-child,td:nth-child(3){text-align:center}
+.prod-img{width:44px;height:44px;object-fit:contain;border-radius:4px;border:1px solid #eee;background:#fafafa;display:block}
 .mfooter{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:10px;background:#FAFAFA;border-radius:0 0 16px 16px}
 .mfooter .dlbtn{font-size:13px;padding:10px}
 footer{text-align:center;padding:20px;font-size:11px;color:#aaa;border-top:1px solid var(--border);background:#fff;margin-top:8px}
@@ -149,8 +153,19 @@ function render() {
     var total = 0;
     pisoKeys.forEach(function(p){ total += g.pisos[p].length; });
     var code = g.code;
+    // Collect up to 4 product images across all pisos
+    var imgs = [];
+    pisoKeys.forEach(function(p) {
+      g.pisos[p].forEach(function(prod) { if (prod.img && imgs.length < 4) imgs.push(prod.img); });
+    });
+    var imgStrip = imgs.length
+      ? '<div class="cimg-row">' + imgs.map(function(src) {
+          return '<img src="' + src + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">';
+        }).join('') + '</div>'
+      : '';
     var card = '<div class="card">' +
       '<div class="ch"><div class="ccode">' + code + '</div><div class="cname">' + g.name + '</div></div>' +
+      imgStrip +
       '<div class="cb"><div class="meta">' +
         '<div class="pill">&#9632; ' + total + ' productos</div>' +
         '<div class="pill">&#9776; ' + ps + '</div>' +
@@ -194,8 +209,13 @@ function openModal(code) {
     var piso = pisoKeys[i];
     var prods = g.pisos[piso];
     html += '<div class="piso-title">PISO ' + piso + '</div>';
-    html += '<table><thead><tr><th>Código</th><th>Producto</th><th>Cant.</th><th>OC</th></tr></thead><tbody>';
-    prods.forEach(function(p){ html += '<tr><td>' + p.c + '</td><td>' + p.n + '</td><td>' + p.q + '</td><td>' + p.o + '</td></tr>'; });
+    html += '<table><thead><tr><th>Foto</th><th>Código</th><th>Producto</th><th>Cant.</th><th>OC</th></tr></thead><tbody>';
+    prods.forEach(function(p){
+      var imgCell = p.img
+        ? '<img class="prod-img" src="' + p.img + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
+        : '<div style="width:44px;height:44px;background:#f5f5f5;border-radius:4px;border:1px solid #eee"></div>';
+      html += '<tr><td>' + imgCell + '</td><td>' + p.c + '</td><td>' + p.n + '</td><td>' + p.q + '</td><td>' + p.o + '</td></tr>';
+    });
     html += '</tbody></table>';
   }
   document.getElementById('mbody').innerHTML = html;
@@ -313,7 +333,7 @@ async function downloadAllPDF() {
         head:[['Código','Producto','Cant.','OC']],
         body:prods.map(function(p){ return [p.c,p.n,p.q,p.o]; }),
         styles:{fontSize:8,cellPadding:2.5},
-        headStyles:{fillColor:DARk,textColor:[255,255,255],fontStyle:'bold',fontSize:7.5},
+        headStyles:{fillColor:DARK,textColor:[255,255,255],fontStyle:'bold',fontSize:7.5},
         columnStyles:{0:{cellWidth:22},1:{cellWidth:TW-22-14-14},2:{cellWidth:14,halign:'center'},3:{cellWidth:14,halign:'center'}},
         alternateRowStyles:{fillColor:[250,250,250]},
         didDrawPage:function(data){
