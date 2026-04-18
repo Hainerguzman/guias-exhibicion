@@ -110,7 +110,7 @@ var currentGuide = null;
 document.getElementById('year').textContent = new Date().getFullYear();
 
 // Load data
-fetch('guides.json')
+fetch('guides.json?v=' + Date.now())
   .then(function(r){ return r.json(); })
   .then(function(data){
     GUIDES = data;
@@ -313,7 +313,7 @@ async function downloadAllPDF() {
         head:[['Código','Producto','Cant.','OC']],
         body:prods.map(function(p){ return [p.c,p.n,p.q,p.o]; }),
         styles:{fontSize:8,cellPadding:2.5},
-        headStyles:{fillColor:DARK,textColor:[255,255,255],fontStyle:'bold',fontSize:7.5},
+        headStyles:{fillColor:DARk,textColor:[255,255,255],fontStyle:'bold',fontSize:7.5},
         columnStyles:{0:{cellWidth:22},1:{cellWidth:TW-22-14-14},2:{cellWidth:14,halign:'center'},3:{cellWidth:14,halign:'center'}},
         alternateRowStyles:{fillColor:[250,250,250]},
         didDrawPage:function(data){
