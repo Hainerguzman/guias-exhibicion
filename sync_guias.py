@@ -52,8 +52,7 @@ req = urllib.request.Request(api_url, headers={
 with urllib.request.urlopen(req) as r:
     info = json.loads(r.read().decode('utf-8'))
     sha = info['sha']
-    current_content = base64.b64decode(info['content'].replace('
-', '')).decode('utf-8')
+    current_content = base64.b64decode(info['content'].replace('\n', '')).decode('utf-8')
 
 new_content = json.dumps(guides, ensure_ascii=False, indent=2)
 if new_content.strip() == current_content.strip():
@@ -74,4 +73,4 @@ req = urllib.request.Request(api_url, data=payload, method='PUT', headers={
 })
 with urllib.request.urlopen(req) as r:
     result = json.loads(r.read().decode('utf-8'))
-    print(f'ACTUALIZADO: commit {result["commit"]["sha"][:8]} — {len(guides)} guias')
+    print(f'ACTUALIZADO: commit {result["commit"]["sha"][:8]} - {len(guides)} guias')
