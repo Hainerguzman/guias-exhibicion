@@ -2,8 +2,8 @@ name: Sync Guias Exhibicion
 
 on:
   schedule:
-    - cron: "0 8 * * *"   # Diario a las 3am Colombia (UTC-5)
-  workflow_dispatch:           # Permite ejecutar manualmente
+    - cron: "0 8 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -12,88 +12,10 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Sync guides from Jamar API
-        run: |
-          python3 << PYEOF
-import urllib.request, json, base64, sys, os
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-BASE = 'https://prd.appsjamar.com/ecommerce/ambientes/v1'
-
-def fetch(url):
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            return json.loads(r.read().decode('utf-8'))
-    except Exception as e:
-        print(f'Error fetching {url}: {e}')
-        return []
-
-# 1. Obtener ambientes activos
-ambientes = [a for a in fetch(f'{BASE}/ambientes/list/JA') if a.get('estado') == 'A']
-print(f'Ambientes activos: {len(ambientes)}')
-if not ambientes:
-    print('ERROR: No se obtuvieron ambientes.')
-    sys.exit(1)
-
-# 2. Obtener productos por piso para cada ambiente
-guides = []
-for amb in ambientes:
-    code = amb['codigo_ambiente']
-    name = amb['nombre_ambiente']
-    pisos = {}
-    for piso_num in range(1, 11):
-        products = fetch(f'{BASE}/ambiente_detail/list/JA/{code}/{piso_num}')
-        if not products:
-            break
-        items = [
-            {
-                'c': p['producto'].split(' - ')[0].strip(),
-                'n': p.get('name', p['producto'].split(' - ', 1)[-1].strip()),
-                'q': p.get('can', 0),
-                'o': p.get('can_oc', 0),
-                'img': p.get('image', '')
-            }
-            for p in products if p.get('estado') == 'A'
-        ]
-        if items:
-            pisos[str(piso_num)] = items
-    if pisos:
-        guides.append({'Écode': code, 'name': name, 'pisos': pisos})
-
-print(f'Guias con productos: {len(guides)}')
-
-# 3. Obtener SHA y contenido actual de guides.json
-token = os.environ['GITHUB_TOKEN']
-api_url = 'https://api.github.com/repos/Hainerguzman/guias-exhibicion/contents/guides.json'
-req = urllib.request.Request(api_url, headers={
-    'Authorization': f'token {token}',
-    'Accept': 'application/vnd.github.v3+json'
-})
-with urllib.request.urlopen(req) as r:
-    info = json.loads(r.read().decode('utf-8'))
-    sha = info['sha']
-    current_content = base64.b64decode(info['content'].replace('\n','')).decode('utf-8')
-
-# 4. Comparar y actualizar si hay cambios
-new_content = json.dumps(guides, ensure_ascii=False, indent=2)
-if new_content.strip() == current_content.strip():
-    print('Sin cambios detectados. guides.json ya esta al dia.')
-    sys.exit(0)
-
-new_b64 = base64.b64encode(new_content.encode('utf-8')).decode('ascii')
-payload = json.dumps({
-    'message': f'Auto-sync: {len(guides)} guias activas [{__import__("datetime").date.today()}]',
-    'content': new_b64,
-    'sha': sha
-}).encode('utf-8')
-req = urllib.request.Request(api_url, data=payload, method='PUT', headers={
-    'Authorization': f'token {token}',
-    'Content-Type': 'application/json',
-    'Accept': 'application/vnd.github.v3+json'
-})
-with urllib.request.urlopen(req) as r:
-    result = json.loads(r.read().decode('utf-8'))
-    print(f'ACTUALIZADO: commit {result["commit"]["sha"][:8]} â€” {len(guides)} guias')
-PYEOF
+      - name: Run sync script
+        run: python3 sync_guias.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
