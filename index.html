@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Guías de Exhibición — Jamar</title>
+<title>GuÃ­as de ExhibiciÃ³n â Jamar</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -69,10 +69,62 @@ footer{text-align:center;padding:20px;font-size:11px;color:#aaa;border-top:1px s
 </style>
 </head>
 <body>
+<style>
+#login-overlay{position:fixed;inset:0;background:#F0F2F5;z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column}
+#login-overlay.hidden{display:none}
+.login-box{background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.14);padding:40px 36px;width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;gap:20px}
+.login-logo{font-size:32px;font-weight:900;letter-spacing:-1px;color:#C8102E}
+.login-subtitle{font-size:13px;color:#666;margin-top:-12px;text-align:center}
+.login-box input{width:100%;padding:11px 14px;border:1.5px solid #E0E0E0;border-radius:8px;font-size:14px;outline:none;transition:border-color .2s;font-family:inherit}
+.login-box input:focus{border-color:#C8102E}
+.login-btn{width:100%;padding:12px;background:#C8102E;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;transition:filter .2s;font-family:inherit}
+.login-btn:hover{filter:brightness(.9)}
+.login-error{color:#C8102E;font-size:12px;text-align:center;min-height:16px}
+.login-footer{font-size:11px;color:#aaa;text-align:center;margin-top:4px}
+</style>
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">JAMAR</div>
+    <div class="login-subtitle">Guías de Exhibición<br>Acceso restringido</div>
+    <input type="text" id="login-user" placeholder="Usuario" autocomplete="username"/>
+    <input type="password" id="login-pass" placeholder="Contraseña" autocomplete="current-password"/>
+    <div class="login-error" id="login-error"></div>
+    <button class="login-btn" id="login-btn">Ingresar</button>
+    <div class="login-footer">Solo personal autorizado Jamar</div>
+  </div>
+</div>
+<script>
+(function(){
+  var SESSION_KEY = 'jm_auth_ok';
+  function checkAuth(){
+    if(sessionStorage.getItem(SESSION_KEY)==='1'){
+      document.getElementById('login-overlay').classList.add('hidden');
+    }
+  }
+  function doLogin(){
+    var u = document.getElementById('login-user').value.trim();
+    var p = document.getElementById('login-pass').value;
+    var err = document.getElementById('login-error');
+    if(u==='CVISUALJAM' && p==='Guias26**'){
+      sessionStorage.setItem(SESSION_KEY,'1');
+      document.getElementById('login-overlay').classList.add('hidden');
+      err.textContent='';
+    } else {
+      err.textContent='Usuario o contraseña incorrectos';
+      document.getElementById('login-pass').value='';
+      document.getElementById('login-pass').focus();
+    }
+  }
+  document.getElementById('login-btn').addEventListener('click', doLogin);
+  document.getElementById('login-pass').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+  document.getElementById('login-user').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('login-pass').focus(); });
+  checkAuth();
+})();
+</script>
 <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
 <header>
   <div class="logo">JAMAR</div>
-  <div class="htitle">Guías de Exhibición</div>
+  <div class="htitle">GuÃ­as de ExhibiciÃ³n</div>
   <div class="bulk-btns">
     <button class="bulk-btn" onclick="downloadAllPDF()">&#8595; Todas en PDF</button>
     <button class="bulk-btn" onclick="downloadAllXLSX()">&#8595; Todas en Excel</button>
@@ -81,16 +133,16 @@ footer{text-align:center;padding:20px;font-size:11px;color:#aaa;border-top:1px s
 <div class="toolbar">
   <div class="sw">
     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    <input type="text" id="searchInput" placeholder="Buscar por código o nombre…" oninput="render()"/>
+    <input type="text" id="searchInput" placeholder="Buscar por cÃ³digo o nombreâ¦" oninput="render()"/>
   </div>
   <div class="fbtns">
     <button class="fb active" onclick="setFilter('all',this)">Todas</button>
     <button class="fb" onclick="setFilter('DOR',this)">Dormitorio</button>
     <button class="fb" onclick="setFilter('SOC',this)">Social</button>
   </div>
-  <span class="cbadge" id="countBadge">Cargando…</span>
+  <span class="cbadge" id="countBadge">Cargandoâ¦</span>
 </div>
-<div class="grid" id="grid"><div class="loading">Cargando guías…</div></div>
+<div class="grid" id="grid"><div class="loading">Cargando guÃ­asâ¦</div></div>
 <div class="overlay" id="overlay" onclick="closeModal(event)">
   <div class="modal">
     <div class="mhead">
@@ -105,7 +157,7 @@ footer{text-align:center;padding:20px;font-size:11px;color:#aaa;border-top:1px s
     </div>
   </div>
 </div>
-<footer>Jamar &nbsp;·&nbsp; Guías de Exhibición &nbsp;·&nbsp; <span id="year"></span></footer>
+<footer>Jamar &nbsp;Â·&nbsp; GuÃ­as de ExhibiciÃ³n &nbsp;Â·&nbsp; <span id="year"></span></footer>
 <script>
 var GUIDES = [];
 var activeFilter = 'all';
@@ -140,16 +192,16 @@ function render() {
     if (q && g.code.toLowerCase().indexOf(q) === -1 && g.name.toLowerCase().indexOf(q) === -1) return false;
     return true;
   });
-  document.getElementById('countBadge').textContent = vis.length + ' guía' + (vis.length !== 1 ? 's' : '');
+  document.getElementById('countBadge').textContent = vis.length + ' guÃ­a' + (vis.length !== 1 ? 's' : '');
   if (!vis.length) {
-    grid.innerHTML = '<div class="empty"><p>No se encontraron guías</p></div>';
+    grid.innerHTML = '<div class="empty"><p>No se encontraron guÃ­as</p></div>';
     return;
   }
   var cards = [];
   for (var i = 0; i < vis.length; i++) {
     var g = vis[i];
     var pisoKeys = Object.keys(g.pisos).sort();
-    var ps = pisoKeys.map(function(p){ return 'Piso ' + p; }).join(' · ') || '—';
+    var ps = pisoKeys.map(function(p){ return 'Piso ' + p; }).join(' Â· ') || 'â';
     var total = 0;
     pisoKeys.forEach(function(p){ total += g.pisos[p].length; });
     var code = g.code;
@@ -209,7 +261,7 @@ function openModal(code) {
     var piso = pisoKeys[i];
     var prods = g.pisos[piso];
     html += '<div class="piso-title">PISO ' + piso + '</div>';
-    html += '<table><thead><tr><th>Foto</th><th>Código</th><th>Producto</th><th>Cant.</th><th>OC</th></tr></thead><tbody>';
+    html += '<table><thead><tr><th>Foto</th><th>CÃ³digo</th><th>Producto</th><th>Cant.</th><th>OC</th></tr></thead><tbody>';
     prods.forEach(function(p){
       var imgCell = p.img
         ? '<img class="prod-img" src="' + p.img + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
@@ -286,7 +338,7 @@ async function buildPDF(g) {
       pisoDoc.autoTable({
         startY: y,
         margin: {left:MARGIN, right:MARGIN},
-        head: [['', 'Código', 'Producto', 'Cant.', 'OC']],
+        head: [['', 'CÃ³digo', 'Producto', 'Cant.', 'OC']],
         body: pisoProds.map(function(p){ return ['', p.c, p.n, p.q, p.o]; }),
         styles: {fontSize:8, cellPadding:2, overflow:'linebreak'},
         bodyStyles: {minCellHeight:IMG_COL},
@@ -312,8 +364,8 @@ async function buildPDF(g) {
         },
         didDrawPage: function(data) {
           pisoDoc.setFontSize(7); pisoDoc.setTextColor(150,150,150);
-          pisoDoc.text('JAMAR — Guías de Exhibición', MARGIN, 290);
-          pisoDoc.text('Pág. ' + pisoDoc.internal.getCurrentPageInfo().pageNumber, W-MARGIN, 290, {align:'right'});
+          pisoDoc.text('JAMAR â GuÃ­as de ExhibiciÃ³n', MARGIN, 290);
+          pisoDoc.text('PÃ¡g. ' + pisoDoc.internal.getCurrentPageInfo().pageNumber, W-MARGIN, 290, {align:'right'});
         }
       });
     })(prods, imgCache, doc);
@@ -329,8 +381,8 @@ async function genPDF(code) {
   var cardBtn = document.querySelector('[data-code="'+code+'"][data-action="pdf"]');
   var mBtn = document.getElementById('mPdfBtn');
   var origCard = cardBtn ? cardBtn.innerHTML : null;
-  if (cardBtn) { cardBtn.innerHTML = 'Generando…'; cardBtn.disabled = true; }
-  if (mBtn) { mBtn.innerHTML = 'Generando…'; mBtn.disabled = true; }
+  if (cardBtn) { cardBtn.innerHTML = 'Generandoâ¦'; cardBtn.disabled = true; }
+  if (mBtn) { mBtn.innerHTML = 'Generandoâ¦'; mBtn.disabled = true; }
   try {
     var doc = await buildPDF(g);
     doc.save(code + '_' + g.name.replace(/[^a-zA-Z0-9]/g,'_') + '.pdf');
@@ -343,10 +395,10 @@ function genXLSX(code) {
   var g = getGuide(code);
   if (!g) return;
   var wb = XLSX.utils.book_new();
-  var rows = [[g.code + ' — ' + g.name]];
+  var rows = [[g.code + ' â ' + g.name]];
   var pisoKeys = Object.keys(g.pisos).sort();
   pisoKeys.forEach(function(piso) {
-    rows.push(['PISO ' + piso], ['Código','Producto','Cantidad','OC']);
+    rows.push(['PISO ' + piso], ['CÃ³digo','Producto','Cantidad','OC']);
     g.pisos[piso].forEach(function(p){ rows.push([p.c, p.n, p.q, p.o]); });
     rows.push([]);
   });
@@ -397,7 +449,7 @@ async function downloadAllPDF() {
       (function(pisoProds, pisoCache, masterDoc) {
         masterDoc.autoTable({
           startY: y, margin:{left:MARGIN,right:MARGIN},
-          head:[['', 'Código','Producto','Cant.','OC']],
+          head:[['', 'CÃ³digo','Producto','Cant.','OC']],
           body:pisoProds.map(function(p){ return ['',p.c,p.n,p.q,p.o]; }),
           styles:{fontSize:8,cellPadding:2,overflow:'linebreak'},
           bodyStyles:{minCellHeight:IMG_COL},
@@ -413,8 +465,8 @@ async function downloadAllPDF() {
           },
           didDrawPage:function(data){
             masterDoc.setFontSize(7);masterDoc.setTextColor(150,150,150);
-            masterDoc.text('JAMAR — Guías de Exhibición',MARGIN,290);
-            masterDoc.text('Pág. '+masterDoc.internal.getCurrentPageInfo().pageNumber,W-MARGIN,290,{align:'right'});
+            masterDoc.text('JAMAR â GuÃ­as de ExhibiciÃ³n',MARGIN,290);
+            masterDoc.text('PÃ¡g. '+masterDoc.internal.getCurrentPageInfo().pageNumber,W-MARGIN,290,{align:'right'});
           }
         });
       })(prods, imgCache, master);
@@ -429,7 +481,7 @@ async function downloadAllPDF() {
 
 function downloadAllXLSX() {
   var wb = XLSX.utils.book_new();
-  var summaryRows = [['Código','Nombre','Pisos','Total Productos']];
+  var summaryRows = [['CÃ³digo','Nombre','Pisos','Total Productos']];
   GUIDES.forEach(function(g) {
     var total = Object.values(g.pisos).reduce(function(s,a){ return s+a.length; }, 0);
     summaryRows.push([g.code, g.name, Object.keys(g.pisos).join(', '), total]);
@@ -438,9 +490,9 @@ function downloadAllXLSX() {
   wsSummary['!cols'] = [{wch:10},{wch:35},{wch:12},{wch:16}];
   XLSX.utils.book_append_sheet(wb, wsSummary, 'Resumen');
   GUIDES.forEach(function(g) {
-    var rows = [[g.code + ' — ' + g.name]];
+    var rows = [[g.code + ' â ' + g.name]];
     Object.keys(g.pisos).sort().forEach(function(piso) {
-      rows.push(['PISO '+piso], ['Código','Producto','Cantidad','OC']);
+      rows.push(['PISO '+piso], ['CÃ³digo','Producto','Cantidad','OC']);
       g.pisos[piso].forEach(function(p){ rows.push([p.c,p.n,p.q,p.o]); });
       rows.push([]);
     });
