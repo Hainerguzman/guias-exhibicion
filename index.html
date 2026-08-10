@@ -377,15 +377,13 @@ function genXLSX(code) {
   var g = getGuide(code);
   if (!g) return;
   var wb = XLSX.utils.book_new();
-  var rows = [[g.code + ' — ' + g.name]];
+  var rows = [['Piso','Código','Producto','Cantidad','OC']];
   var pisoKeys = Object.keys(g.pisos).sort();
   pisoKeys.forEach(function(piso) {
-    rows.push(['PISO ' + piso], ['Código','Producto','Cantidad','OC']);
-    g.pisos[piso].forEach(function(p){ rows.push([p.c, p.n, p.q, p.o]); });
-    rows.push([]);
+    g.pisos[piso].forEach(function(p){ rows.push([piso, p.c, p.n, p.q, p.o]); });
   });
   var ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:14},{wch:55},{wch:12},{wch:10}];
+  ws['!cols'] = [{wch:8},{wch:14},{wch:55},{wch:12},{wch:10}];
   XLSX.utils.book_append_sheet(wb, ws, code);
   XLSX.writeFile(wb, code + '_' + g.name.replace(/[^a-zA-Z0-9]/g,'_') + '.xlsx');
 }
@@ -472,14 +470,12 @@ function downloadAllXLSX() {
   wsSummary['!cols'] = [{wch:10},{wch:35},{wch:12},{wch:16}];
   XLSX.utils.book_append_sheet(wb, wsSummary, 'Resumen');
   GUIDES.forEach(function(g) {
-    var rows = [[g.code + ' — ' + g.name]];
+    var rows = [['Piso','Código','Producto','Cantidad','OC']];
     Object.keys(g.pisos).sort().forEach(function(piso) {
-      rows.push(['PISO '+piso], ['Código','Producto','Cantidad','OC']);
-      g.pisos[piso].forEach(function(p){ rows.push([p.c,p.n,p.q,p.o]); });
-      rows.push([]);
+      g.pisos[piso].forEach(function(p){ rows.push([piso,p.c,p.n,p.q,p.o]); });
     });
     var ws = XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols'] = [{wch:14},{wch:50},{wch:12},{wch:10}];
+    ws['!cols'] = [{wch:8},{wch:14},{wch:50},{wch:12},{wch:10}];
     XLSX.utils.book_append_sheet(wb, ws, g.code.substring(0,31));
   });
   XLSX.writeFile(wb, 'Guias_Exhibicion_Jamar_Completo.xlsx');
