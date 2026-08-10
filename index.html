@@ -115,7 +115,7 @@ footer{text-align:center;padding:20px;font-size:11px;color:#aaa;border-top:1px s
 <div class="toolbar">
   <div class="sw">
     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    <input type="text" id="searchInput" placeholder="Buscar por código o nombre…" oninput="render()"/>
+    <input type="text" id="searchInput" placeholder="Buscar guia, producto o codigo..." oninput="render()"/>
   </div>
   <div class="fbtns">
     <button class="fb active" onclick="setFilter('all',this)">Todas</button>
@@ -171,7 +171,7 @@ function render() {
   var grid = document.getElementById('grid');
   var vis = GUIDES.filter(function(g) {
     if (activeFilter !== 'all' && g.code.indexOf(activeFilter) !== 0) return false;
-    if (q && g.code.toLowerCase().indexOf(q) === -1 && g.name.toLowerCase().indexOf(q) === -1) return false;
+    if(q){var gm=g.code.toLowerCase().indexOf(q)!==-1||g.name.toLowerCase().indexOf(q)!==-1;if(!gm){var pr=[];Object.values(g.pisos).forEach(function(a){pr=pr.concat(a);});gm=pr.some(function(p){return(p.c||"").toLowerCase().indexOf(q)!==-1||(p.n||"").toLowerCase().indexOf(q)!==-1;});}if(!gm)return false;}
     return true;
   });
   document.getElementById('countBadge').textContent = vis.length + ' guía' + (vis.length !== 1 ? 's' : '');
