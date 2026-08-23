@@ -8,20 +8,21 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
-:root{--red:#C8102E;--dark:#1A1A2E;--border:#E0E0E0;--shadow:0 2px 8px rgba(0,0,0,.12);--green:#2E7D32;--yellow:#F57F17}
+:root{--red:#C8102E;--dark:#1A1A2E;--border:#E0E0E0;--shadow:0 2px 8px rgba(0,0,0,.12)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F2F5;color:var(--dark);min-height:100vh}
 /* LOGIN */
 #login-overlay{position:fixed;inset:0;background:#F0F2F5;z-index:99999;display:flex;align-items:center;justify-content:center}
 #login-overlay.hidden{display:none}
 .login-box{background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.14);padding:40px 36px;width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;gap:20px}
-.login-logo{font-size:32px;font-weight:900;letter-spacing:-1px;color:var(--red)}
+.login-logo{font-size:32px;font-weight:900;letter-spacing:-1px;color:#C8102E}
 .login-subtitle{font-size:13px;color:#666;margin-top:-12px;text-align:center}
-.login-box input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none;transition:border-color .2s;font-family:inherit}
-.login-box input:focus{border-color:var(--red)}
-.login-btn{width:100%;padding:12px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.login-box input{width:100%;padding:11px 14px;border:1.5px solid #E0E0E0;border-radius:8px;font-size:14px;outline:none;transition:border-color .2s;font-family:inherit}
+.login-box input:focus{border-color:#C8102E}
+.login-btn{width:100%;padding:12px;background:#C8102E;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;transition:filter .2s;font-family:inherit}
 .login-btn:hover{filter:brightness(.9)}
-.login-error{color:var(--red);font-size:12px;text-align:center;min-height:16px}
+.login-error{color:#C8102E;font-size:12px;text-align:center;min-height:16px}
+.login-footer{font-size:11px;color:#aaa;text-align:center;margin-top:4px}
 /* HEADER */
 header{background:var(--red);color:#fff;padding:0 24px;display:flex;align-items:center;gap:16px;height:64px;box-shadow:var(--shadow);flex-wrap:wrap}
 .logo{font-size:26px;font-weight:900;letter-spacing:-1px;white-space:nowrap}
@@ -41,18 +42,21 @@ header{background:var(--red);color:#fff;padding:0 24px;display:flex;align-items:
 .fb.eval-tab{border-color:#7B1FA2;color:#7B1FA2}
 .fb.eval-tab.active,.fb.eval-tab:hover{background:#7B1FA2;border-color:#7B1FA2;color:#fff}
 .cbadge{background:#F5F5F5;color:#666;font-size:12px;padding:4px 10px;border-radius:20px;white-space:nowrap}
-/* GUIDES GRID */
+/* GRID */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;padding:20px 24px}
 .card{background:#fff;border-radius:12px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .2s,transform .15s}
 .card:hover{box-shadow:0 6px 20px rgba(0,0,0,.14);transform:translateY(-2px)}
 .ch{background:var(--red);padding:12px 14px;display:flex;align-items:center;gap:10px}
 .ccode{font-size:19px;font-weight:900;color:#fff;min-width:58px}
 .cname{font-size:11.5px;color:rgba(255,255,255,.9);line-height:1.35;flex:1}
+.ch-badge{background:rgba(255,255,255,.25);border-radius:12px;padding:2px 8px;font-size:10px;font-weight:700;color:#fff;white-space:nowrap;flex-shrink:0}
+.ch-badge.warn{background:rgba(255,220,0,.35);color:#fff}
 .cb{padding:10px 14px;flex:1}
 .cimg-row{display:flex;gap:6px;overflow-x:auto;padding:8px 14px 4px;scrollbar-width:thin}
 .cimg-row img{width:64px;height:64px;object-fit:contain;border-radius:6px;border:1px solid var(--border);background:#fafafa;flex-shrink:0}
 .meta{display:flex;gap:8px;flex-wrap:wrap}
 .pill{display:flex;align-items:center;gap:4px;font-size:11px;color:#555;background:#F5F5F5;padding:3px 9px;border-radius:20px}
+.pill.warn{background:#FFF3E0;color:#E65100}
 .cf{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--border);background:#FAFAFA}
 .dlbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:9px 6px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:none;transition:filter .2s}
 .dlbtn:hover{filter:brightness(.9)}
@@ -61,6 +65,12 @@ header{background:var(--red);color:#fff;padding:0 24px;display:flex;align-items:
 .dlbtn.view{background:#E3F2FD;color:#1565C0}
 .empty{grid-column:1/-1;text-align:center;padding:60px 20px;color:#aaa}
 .loading{grid-column:1/-1;text-align:center;padding:60px 20px;color:#aaa;font-size:16px}
+/* STATUS BADGES */
+.sbadge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.3px}
+.sbadge.A{background:#E8F5E9;color:#2E7D32}
+.sbadge.T{background:#E3F2FD;color:#1565C0}
+.sbadge.O{background:#F3E5F5;color:#7B1FA2}
+.sbadge.N{background:#FFEBEE;color:#C8102E}
 /* MODAL GUIAS */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center}
 .overlay.open{display:flex}
@@ -75,7 +85,6 @@ table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:4px}
 th{background:#F5F5F5;font-weight:700;padding:7px 8px;text-align:left;border-bottom:2px solid var(--dark);font-size:11px}
 td{padding:6px 8px;border-bottom:1px solid #EEE;vertical-align:middle}
 tr:nth-child(even){background:#FAFAFA}
-td:last-child,td:nth-child(3){text-align:center}
 .prod-img{width:44px;height:44px;object-fit:contain;border-radius:4px;border:1px solid #eee;background:#fafafa;display:block}
 .mfooter{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:10px;background:#FAFAFA;border-radius:0 0 16px 16px}
 .mfooter .dlbtn{font-size:13px;padding:10px}
@@ -83,9 +92,8 @@ footer{text-align:center;padding:20px;font-size:11px;color:#aaa;border-top:1px s
 .progress-bar{display:none;position:fixed;top:0;left:0;right:0;height:3px;background:#FFCDD2;z-index:9999}
 .progress-fill{height:100%;background:var(--red);width:0%;transition:width .1s}
 
-/* ── EVALUACIÓN TAB ── */
+/* ── EVALUACIÓN ── */
 #eval-section{display:none;padding:0}
-/* Upload */
 .eval-upload-wrap{padding:32px 24px;display:flex;flex-direction:column;align-items:center;gap:20px}
 .eval-title{font-size:18px;font-weight:700;color:var(--dark)}
 .drop-zone{width:100%;max-width:500px;border:2.5px dashed #C8102E55;border-radius:16px;padding:36px 24px;text-align:center;cursor:pointer;background:#fff;transition:all .2s;position:relative}
@@ -94,21 +102,19 @@ footer{text-align:center;padding:20px;font-size:11px;color:#aaa;border-top:1px s
 .drop-icon{font-size:44px;margin-bottom:10px}
 .drop-text{font-size:13px;color:#555;line-height:1.6}
 .drop-text strong{color:var(--red)}
-/* Processing */
 #eval-proc{padding:48px 24px;text-align:center;display:none}
 .proc-spinner{width:44px;height:44px;border:4px solid #EEE;border-top-color:var(--red);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 14px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .proc-text{font-size:13px;color:#666}
 .proc-bar{width:100%;max-width:360px;height:5px;background:#EEE;border-radius:3px;margin:12px auto 0;overflow:hidden}
 .proc-fill{height:100%;background:var(--red);width:0%;transition:width .3s}
-/* Eval results */
 #eval-results{display:none}
 .stats-bar{display:flex;gap:12px;padding:16px 24px;flex-wrap:wrap}
 .stat-card{background:#fff;border-radius:10px;padding:10px 18px;flex:1;min-width:130px;box-shadow:var(--shadow)}
 .stat-val{font-size:26px;font-weight:900;color:var(--dark)}
-.stat-val.green{color:var(--green)}
+.stat-val.green{color:#2E7D32}
 .stat-val.red{color:var(--red)}
-.stat-val.yellow{color:var(--yellow)}
+.stat-val.yellow{color:#F57F17}
 .stat-label{font-size:10px;color:#888;font-weight:600;letter-spacing:.3px}
 .eval-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;padding:8px 24px 24px}
 .gcard{background:#fff;border-radius:12px;box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:box-shadow .2s,transform .15s}
@@ -127,10 +133,10 @@ footer{text-align:center;padding:20px;font-size:11px;color:#aaa;border-top:1px s
 .ext-item{display:flex;justify-content:space-between;font-size:11px;color:#555;gap:8px}
 .ext-item .ext-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
 .nodata-msg{font-size:11px;color:#aaa;font-style:italic;padding:4px 0}
-/* Eval modal */
-.emodal{background:#fff;border-radius:16px;width:90%;max-width:800px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+/* EVAL MODAL */
 .eoverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;align-items:center;justify-content:center}
 .eoverlay.open{display:flex}
+.emodal{background:#fff;border-radius:16px;width:90%;max-width:800px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .ehead{background:#7B1FA2;padding:16px 20px;border-radius:16px 16px 0 0;display:flex;align-items:center;gap:12px}
 .ecode{font-size:20px;font-weight:900;color:#fff}
 .ename{font-size:13px;color:rgba(255,255,255,.9);flex:1}
@@ -147,17 +153,16 @@ footer{text-align:center;padding:20px;font-size:11px;color:#aaa;border-top:1px s
 .etable td{padding:5px 8px;border-bottom:1px solid #EEE;vertical-align:top}
 .etable tr:nth-child(even){background:#FAFAFA}
 .pct-cell{font-weight:700;font-size:13px;text-align:center}
-.pct-cell.green{color:var(--green)}
-.pct-cell.yellow{color:var(--yellow)}
+.pct-cell.green{color:#2E7D32}
+.pct-cell.yellow{color:#F57F17}
 .pct-cell.red{color:var(--red)}
 .pct-cell.gray{color:#999}
 .ext-mini{font-size:10px;color:#888;margin-top:2px}
-.int-mini{font-size:10px;color:var(--green);margin-top:2px}
+.int-mini{font-size:10px;color:#2E7D32;margin-top:2px}
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="login-overlay">
 <div class="login-box">
   <div class="login-logo">JAMAR</div>
@@ -166,21 +171,21 @@ footer{text-align:center;padding:20px;font-size:11px;color:#aaa;border-top:1px s
   <input type="password" id="login-pass" placeholder="Contrasena" autocomplete="current-password"/>
   <div class="login-error" id="login-error"></div>
   <button class="login-btn" id="login-btn">Ingresar</button>
-  <div style="font-size:11px;color:#aaa;text-align:center">Solo personal autorizado Jamar</div>
+  <div class="login-footer">Solo personal autorizado Jamar</div>
 </div>
 </div>
 <script>(function(){
-var K='jm_auth_ok';
-if(sessionStorage.getItem(K)==='1'){document.getElementById('login-overlay').classList.add('hidden');}
-function go(){
-  var u=document.getElementById('login-user').value.trim();
-  var p=document.getElementById('login-pass').value;
-  if(u==='CVISUALJAM'&&p==='Guias26**'){sessionStorage.setItem(K,'1');document.getElementById('login-overlay').classList.add('hidden');}
-  else{document.getElementById('login-error').textContent='Usuario o contrasena incorrectos';document.getElementById('login-pass').value='';document.getElementById('login-pass').focus();}
-}
-document.getElementById('login-btn').addEventListener('click',go);
-document.getElementById('login-pass').addEventListener('keydown',function(e){if(e.key==='Enter')go();});
-document.getElementById('login-user').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('login-pass').focus();});
+  var K='jm_auth_ok';
+  if(sessionStorage.getItem(K)==='1'){document.getElementById('login-overlay').classList.add('hidden');}
+  function go(){
+    var u=document.getElementById('login-user').value.trim();
+    var p=document.getElementById('login-pass').value;
+    if(u==='CVISUALJAM'&&p==='Guias26**'){sessionStorage.setItem(K,'1');document.getElementById('login-overlay').classList.add('hidden');}
+    else{document.getElementById('login-error').textContent='Usuario o contrasena incorrectos';document.getElementById('login-pass').value='';document.getElementById('login-pass').focus();}
+  }
+  document.getElementById('login-btn').addEventListener('click',go);
+  document.getElementById('login-pass').addEventListener('keydown',function(e){if(e.key==='Enter')go();});
+  document.getElementById('login-user').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('login-pass').focus();});
 })();</script>
 
 <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
@@ -189,23 +194,23 @@ document.getElementById('login-user').addEventListener('keydown',function(e){if(
   <div class="logo">JAMAR</div>
   <div class="htitle" id="htitle">Guías de Exhibición</div>
   <div class="bulk-btns" id="bulk-btns">
-    <button class="bulk-btn" onclick="downloadAllPDF()">↓ Todas en PDF</button>
-    <button class="bulk-btn" onclick="downloadAllXLSX()">↓ Todas en Excel</button>
+    <button class="bulk-btn" onclick="downloadAllPDF()">&#8595; Todas en PDF</button>
+    <button class="bulk-btn" onclick="downloadAllXLSX()">&#8595; Todas en Excel</button>
   </div>
 </header>
 
 <div class="toolbar">
-  <div class="sw" id="sw-search">
+  <div class="sw" id="sw-wrap">
     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
     <input type="text" id="searchInput" placeholder="Buscar guia, producto o codigo..." oninput="render()"/>
   </div>
-  <div class="fbtns" id="filter-btns">
+  <div class="fbtns" id="guide-filters">
     <button class="fb active" onclick="setFilter('all',this)">Todas</button>
     <button class="fb" onclick="setFilter('DOR',this)">Dormitorio</button>
     <button class="fb" onclick="setFilter('SOC',this)">Social</button>
   </div>
   <div class="fbtns">
-    <button class="fb eval-tab" id="eval-tab-btn" onclick="toggleEval(this)">📊 Evaluación</button>
+    <button class="fb eval-tab" id="eval-tab-btn" onclick="toggleEval(this)">&#128202; Evaluación</button>
   </div>
   <span class="cbadge" id="countBadge">Cargando…</span>
 </div>
@@ -215,25 +220,22 @@ document.getElementById('login-user').addEventListener('keydown',function(e){if(
   <div class="grid" id="grid"><div class="loading">Cargando guías…</div></div>
 </div>
 
-<!-- EVALUACIÓN SECTION -->
+<!-- EVALUACIÓN -->
 <div id="eval-section">
-  <!-- Upload -->
   <div class="eval-upload-wrap" id="eval-upload">
-    <div class="eval-title">📊 Evaluación de Cohesión por Guía</div>
+    <div class="eval-title">&#128202; Evaluación de Cohesión por Guía</div>
     <p style="font-size:13px;color:#666;text-align:center;max-width:460px">Sube el reporte Market Basket de Tableau para ver qué tan bien se venden juntos los productos de cada guía.</p>
     <div class="drop-zone" id="dropZone">
       <input type="file" id="fileInput" accept=".xlsx,.xls"/>
-      <div class="drop-icon">📂</div>
+      <div class="drop-icon">&#128194;</div>
       <div class="drop-text"><strong>Arrastra el archivo aquí</strong><br>o haz clic para buscarlo<br><span style="font-size:11px;color:#aaa">Excel (.xlsx) — Market Basket Productos</span></div>
     </div>
   </div>
-  <!-- Processing -->
   <div id="eval-proc">
     <div class="proc-spinner"></div>
     <div class="proc-text" id="proc-text">Procesando…</div>
     <div class="proc-bar"><div class="proc-fill" id="proc-fill"></div></div>
   </div>
-  <!-- Results -->
   <div id="eval-results">
     <div class="stats-bar" id="stats-bar"></div>
     <div class="eval-grid" id="eval-grid"></div>
@@ -246,12 +248,12 @@ document.getElementById('login-user').addEventListener('keydown',function(e){if(
   <div class="mhead">
     <div class="mcode" id="mcode"></div>
     <div class="mname" id="mname"></div>
-    <button class="mclose" onclick="closeModal()">✕</button>
+    <button class="mclose" onclick="document.getElementById('overlay').classList.remove('open')">&times;</button>
   </div>
   <div class="mbody" id="mbody"></div>
   <div class="mfooter">
-    <button class="dlbtn pdf" onclick="downloadPDF(currentGuide)">↓ PDF</button>
-    <button class="dlbtn xl" onclick="downloadXLSX(currentGuide)">↓ Excel</button>
+    <button class="dlbtn pdf" id="mPdfBtn">&#8595; Descargar PDF</button>
+    <button class="dlbtn xl" id="mXlBtn">&#8595; Descargar Excel</button>
   </div>
 </div>
 </div>
@@ -263,139 +265,371 @@ document.getElementById('login-user').addEventListener('keydown',function(e){if(
     <div class="ecode" id="ecode"></div>
     <div class="ename" id="ename"></div>
     <div class="escore" id="escore"></div>
-    <button class="eclose" onclick="closeEModal()">✕</button>
+    <button class="eclose" onclick="closeEModal()">&#x2715;</button>
   </div>
   <div class="ebody" id="ebody"></div>
 </div>
 </div>
 
-<footer>JAMAR — Guías de Exhibición · Datos actualizados automáticamente</footer>
+<footer>Jamar &nbsp;·&nbsp; Guías de Exhibición &nbsp;·&nbsp; <span id="year"></span></footer>
 
 <script>
-// ─── State ────────────────────────────────────────────────────────────────────
-var GUIDES = [], SAP = {}, currentFilter = 'all', currentGuide = null;
-var evalMode = false;
-var EVALUATED = [];
-var MB_LOADED = false;
+// ─── State ─────────────────────────────────────────────────────────────────
+var GUIDES = [], SAP = {}, SAPD = {}, activeFilter = 'all', currentGuide = null;
+var evalMode = false, EVALUATED = [];
 
-// ─── Load data ────────────────────────────────────────────────────────────────
-fetch('guides.json?v='+Date.now()).then(function(r){return r.json();}).then(function(d){
-  GUIDES=d; render();
-  document.getElementById('countBadge').textContent=d.length+' guías';
-}).catch(function(){document.getElementById('grid').innerHTML='<div class="loading">Error cargando guías</div>';});
+document.getElementById('year').textContent = new Date().getFullYear();
 
-fetch('sap_data.json?v='+Date.now()).then(function(r){return r.json();}).then(function(d){SAP=d;}).catch(function(){});
+// ─── Load data ──────────────────────────────────────────────────────────────
+fetch('guides.json?v='+Date.now())
+  .then(function(r){return r.json();})
+  .then(function(d){GUIDES=d; render();})
+  .catch(function(err){
+    document.getElementById('grid').innerHTML='<div class="empty"><p>Error cargando datos: '+err.message+'</p></div>';
+    document.getElementById('countBadge').textContent='Error';
+  });
 
-// ─── Tab toggle ───────────────────────────────────────────────────────────────
+fetch('sap_data.json?v='+Date.now())
+  .then(function(r){return r.json();})
+  .then(function(d){SAP=d; SAPD=d.products||d; render();})
+  .catch(function(){});
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+function getGuide(code){for(var i=0;i<GUIDES.length;i++){if(GUIDES[i].code===code)return GUIDES[i];}return null;}
+
+function prodStatus(p) {
+  var d = SAPD[p.c];
+  if (d && d.e) return d.e; // A, T, O, N from SAP
+  return 'A'; // default activo si no hay dato SAP
+}
+var STATUS_LABELS = {A:'Activo', T:'Testeo', O:'Novedad', N:'Inactivo'};
+function statusLabel(st) {
+  var label = STATUS_LABELS[st] || st;
+  return '<span class="sbadge '+st+'">'+label+'</span>';
+}
+function guideNeedsReview(g) {
+  // Alerta: estado N + stock < 10 + sin OC, en piso 1 o 2
+  return ['1','2'].some(function(piso){
+    return g.pisos[piso] && g.pisos[piso].some(function(p){
+      if (prodStatus(p) !== 'N') return false;
+      var d = SAPD[p.c] || {};
+      var stock = d.s !== undefined ? d.s : p.q;
+      var oc    = d.oc !== undefined ? d.oc : p.o;
+      return stock < 10 && oc === 0;
+    });
+  });
+}
+
+// ─── Tab toggle ─────────────────────────────────────────────────────────────
 function toggleEval(btn) {
   evalMode = !evalMode;
   btn.classList.toggle('active', evalMode);
-  document.getElementById('guides-view').style.display = evalMode ? 'none' : 'block';
+  document.getElementById('guides-view').style.display  = evalMode ? 'none' : 'block';
   document.getElementById('eval-section').style.display = evalMode ? 'block' : 'none';
   document.getElementById('htitle').textContent = evalMode ? 'Guías de Exhibición — Evaluación' : 'Guías de Exhibición';
-  document.getElementById('bulk-btns').style.display = evalMode ? 'none' : 'flex';
-  document.getElementById('sw-search').style.display = evalMode ? 'none' : 'block';
-  document.getElementById('filter-btns').style.display = evalMode ? 'none' : 'flex';
+  document.getElementById('bulk-btns').style.display    = evalMode ? 'none' : 'flex';
+  document.getElementById('sw-wrap').style.display      = evalMode ? 'none' : 'block';
+  document.getElementById('guide-filters').style.display = evalMode ? 'none' : 'flex';
   document.getElementById('countBadge').textContent = evalMode
     ? (EVALUATED.length ? EVALUATED.length+' guías evaluadas' : 'Sube el archivo')
     : GUIDES.length+' guías';
-  if(evalMode && EVALUATED.length) {
+  if (evalMode && EVALUATED.length) {
     document.getElementById('eval-upload').style.display='none';
     document.getElementById('eval-results').style.display='block';
   }
 }
 
-// ─── Guides rendering ─────────────────────────────────────────────────────────
+// ─── Guides render ──────────────────────────────────────────────────────────
 function setFilter(f, btn) {
-  currentFilter = f;
-  document.querySelectorAll('#filter-btns .fb').forEach(function(b){b.classList.remove('active');});
-  if(btn) btn.classList.add('active');
+  activeFilter = f;
+  document.querySelectorAll('#guide-filters .fb').forEach(function(b){b.classList.remove('active');});
+  if (btn) btn.classList.add('active');
   render();
 }
 
 function render() {
-  var q = (document.getElementById('searchInput').value||'').toLowerCase();
-  var items = GUIDES.filter(function(g){
-    if(currentFilter!=='all' && !g.code.startsWith(currentFilter)) return false;
-    if(q){
-      var hay=(g.code+' '+g.name+' '+Object.values(g.pisos).flat().map(function(p){return p.c+' '+p.n;}).join(' ')).toLowerCase();
-      if(hay.indexOf(q)<0) return false;
+  var q = document.getElementById('searchInput').value.toLowerCase().trim();
+  var vis = GUIDES.filter(function(g) {
+    if (activeFilter !== 'all' && g.code.indexOf(activeFilter) !== 0) return false;
+    if (q) {
+      var gm = g.code.toLowerCase().indexOf(q) !== -1 || g.name.toLowerCase().indexOf(q) !== -1;
+      if (!gm) {
+        var pr = [];
+        Object.values(g.pisos).forEach(function(a){pr=pr.concat(a);});
+        gm = pr.some(function(p){return (p.c||'').toLowerCase().indexOf(q)!==-1||(p.n||'').toLowerCase().indexOf(q)!==-1;});
+      }
+      if (!gm) return false;
     }
     return true;
   });
-  document.getElementById('countBadge').textContent = items.length+' guías';
-  if(!items.length){document.getElementById('grid').innerHTML='<div class="empty">Sin resultados</div>';return;}
-  document.getElementById('grid').innerHTML = items.map(function(g){
-    var pisoKeys=Object.keys(g.pisos).sort();
-    var total=pisoKeys.reduce(function(s,k){return s+g.pisos[k].length;},0);
-    var imgs=pisoKeys.flatMap(function(k){return g.pisos[k];}).slice(0,4).map(function(p){
-      return '<img src="'+p.img+'" loading="lazy" onerror="this.style.opacity=0"/>';
-    }).join('');
-    return '<div class="card" onclick="openModal(\''+g.code+'\')">' +
-      '<div class="ch"><div class="ccode">'+g.code+'</div><div class="cname">'+g.name+'</div></div>' +
-      '<div class="cimg-row">'+imgs+'</div>' +
+  document.getElementById('countBadge').textContent = vis.length+' guía'+(vis.length!==1?'s':'');
+  if (!vis.length) { document.getElementById('grid').innerHTML='<div class="empty"><p>No se encontraron guías</p></div>'; return; }
+
+  var cards = [];
+  for (var i = 0; i < vis.length; i++) {
+    var g = vis[i];
+    var pisoKeys = Object.keys(g.pisos).sort();
+    var total = 0; pisoKeys.forEach(function(p){total+=g.pisos[p].length;});
+    var ps = pisoKeys.map(function(p){return 'Piso '+p;}).join(' · ') || '—';
+    var needsReview = guideNeedsReview(g);
+    var imgs = [];
+    pisoKeys.forEach(function(p){g.pisos[p].forEach(function(prod){if(prod.img&&imgs.length<4)imgs.push(prod.img);});});
+    var imgStrip = imgs.length
+      ? '<div class="cimg-row">'+imgs.map(function(src){return '<img src="'+src+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">';}).join('')+'</div>'
+      : '';
+    var reviewBadge = needsReview ? '<div class="ch-badge warn">&#9888; Revisar</div>' : '';
+    var code = g.code;
+    cards.push('<div class="card">'+
+      '<div class="ch"><div class="ccode">'+code+'</div><div class="cname">'+g.name+'</div>'+reviewBadge+'</div>'+
+      imgStrip+
       '<div class="cb"><div class="meta">'+
-        pisoKeys.map(function(k){return '<span class="pill">Piso '+k+': '+g.pisos[k].length+'</span>';}).join('')+
-        '<span class="pill">Total: '+total+'</span></div></div>'+
-      '<div class="cf"><button class="dlbtn pdf" onclick="event.stopPropagation();downloadPDF(GUIDES.find(function(x){return x.code===\''+g.code+'\';}))">↓ PDF</button>'+
-      '<button class="dlbtn xl" onclick="event.stopPropagation();downloadXLSX(GUIDES.find(function(x){return x.code===\''+g.code+'\';}))">↓ Excel</button>'+
-      '<button class="dlbtn view">👁 Ver</button></div></div>';
-  }).join('');
+        '<div class="pill">&#9632; '+total+' productos</div>'+
+        '<div class="pill">&#9776; '+ps+'</div>'+
+        (needsReview ? '<div class="pill warn">&#9888; Producto(s) inactivo(s)</div>' : '')+
+      '</div></div>'+
+      '<div class="cf">'+
+        '<button class="dlbtn pdf" data-code="'+code+'" data-action="pdf">&#8595; PDF</button>'+
+        '<button class="dlbtn xl" data-code="'+code+'" data-action="xlsx">&#8595; Excel</button>'+
+        '<button class="dlbtn view" data-code="'+code+'" data-action="view">&#128065; Ver</button>'+
+      '</div></div>');
+  }
+  document.getElementById('grid').innerHTML = cards.join('');
+  document.getElementById('grid').onclick = function(e) {
+    var btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    var action = btn.dataset.action, code = btn.dataset.code;
+    if (action==='pdf') genPDF(code);
+    else if (action==='xlsx') genXLSX(code);
+    else openModal(code);
+  };
 }
 
+// ─── Guide modal ────────────────────────────────────────────────────────────
 function openModal(code) {
-  var g = GUIDES.find(function(x){return x.code===code;});
-  if(!g) return;
+  var g = getGuide(code); if (!g) return;
   currentGuide = g;
   document.getElementById('mcode').textContent = g.code;
   document.getElementById('mname').textContent = g.name;
+  var html = '';
   var pisoKeys = Object.keys(g.pisos).sort();
-  document.getElementById('mbody').innerHTML = pisoKeys.map(function(piso){
-    var prods = g.pisos[piso];
-    return '<div class="piso-title">PISO '+piso+'</div>' +
-      '<table><thead><tr><th></th><th>Código</th><th>Producto</th><th>Disp.</th><th>OC</th></tr></thead>' +
-      '<tbody>'+prods.map(function(p){
-        var s=SAP[p.c]||{};
-        return '<tr><td><img class="prod-img" src="'+p.img+'" onerror="this.style.opacity=0"/></td>' +
-          '<td>'+p.c+'</td><td>'+p.n+'</td>' +
-          '<td>'+(s.s!==undefined?s.s:p.q)+'</td>' +
-          '<td>'+(s.oc!==undefined?s.oc:p.o)+'</td></tr>';
-      }).join('')+'</tbody></table>';
-  }).join('');
+  for (var i = 0; i < pisoKeys.length; i++) {
+    var piso = pisoKeys[i], prods = g.pisos[piso];
+    html += '<div class="piso-title">PISO '+piso+'</div>';
+    html += '<table><thead><tr><th>Foto</th><th>Código</th><th>Producto</th><th style="text-align:center">Estado</th><th style="text-align:center">Cant.</th><th style="text-align:center">OC</th></tr></thead><tbody>';
+    prods.forEach(function(p) {
+      var st = prodStatus(p);
+      var s = SAPD[p.c] || {};
+      var stock = s.s !== undefined ? s.s : p.q;
+      var oc    = s.oc !== undefined ? s.oc : p.o;
+      var imgCell = p.img
+        ? '<img class="prod-img" src="'+p.img+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
+        : '<div style="width:44px;height:44px;background:#f5f5f5;border-radius:4px;border:1px solid #eee"></div>';
+      html += '<tr><td>'+imgCell+'</td><td>'+p.c+'</td><td>'+p.n+'</td><td style="text-align:center">'+statusLabel(st)+'</td><td style="text-align:center">'+stock+'</td><td style="text-align:center">'+oc+'</td></tr>';
+    });
+    html += '</tbody></table>';
+  }
+  document.getElementById('mbody').innerHTML = html;
+  document.getElementById('mPdfBtn').onclick = function(){genPDF(code);};
+  document.getElementById('mXlBtn').onclick  = function(){genXLSX(code);};
   document.getElementById('overlay').classList.add('open');
 }
 function closeModal(e){if(!e||e.target===document.getElementById('overlay'))document.getElementById('overlay').classList.remove('open');}
 
-// ─── Downloads (simplified) ───────────────────────────────────────────────────
-function downloadXLSX(g) {
-  if(!g) return;
+// ─── PDF (full, with images) ─────────────────────────────────────────────────
+async function loadImgCache(prods) {
+  var cache = {};
+  await Promise.all(prods.filter(function(p){return p.img;}).map(function(prod){
+    return fetch(prod.img,{mode:'cors'})
+      .then(function(r){return r.blob();})
+      .then(function(blob){
+        return new Promise(function(resolve){
+          var reader=new FileReader();
+          reader.onload=function(e){cache[prod.c]=e.target.result;resolve();};
+          reader.onerror=resolve;
+          reader.readAsDataURL(blob);
+        });
+      }).catch(function(){});
+  }));
+  return cache;
+}
+
+async function buildPDF(g) {
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({orientation:'p',unit:'mm',format:'a4'});
+  var RED=[200,16,46], DARK=[26,26,46];
+  var W=210, MARGIN=15, TW=W-2*MARGIN, IMG_COL=16;
+  var pisoKeys = Object.keys(g.pisos).sort();
+  var allProds = []; pisoKeys.forEach(function(p){allProds=allProds.concat(g.pisos[p]);});
+  var imgCache = await loadImgCache(allProds);
+  doc.setFillColor(RED[0],RED[1],RED[2]);
+  doc.roundedRect(MARGIN,15,TW,18,3,3,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(16); doc.setFont('helvetica','bold');
+  doc.text(g.code,MARGIN+4,26.5);
+  doc.setFontSize(11); doc.setFont('helvetica','normal');
+  doc.text(g.name.toUpperCase(),MARGIN+44,26.5);
+  var y = 40;
+  for (var i=0;i<pisoKeys.length;i++) {
+    var piso=pisoKeys[i], prods=g.pisos[piso];
+    if (y>260){doc.addPage();y=20;}
+    doc.setFillColor(238,238,238);
+    doc.rect(MARGIN,y,TW,7,'F');
+    doc.setTextColor(DARK[0],DARK[1],DARK[2]);
+    doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text('  PISO '+piso,MARGIN+2,y+5);
+    y+=9;
+    (function(pisoProds,pisoCache,pisoDoc){
+      pisoDoc.autoTable({
+        startY:y, margin:{left:MARGIN,right:MARGIN},
+        head:[['','Código','Producto','Cant.','OC']],
+        body:pisoProds.map(function(p){var s=SAPD[p.c]||{};return['',p.c,p.n,s.s!==undefined?s.s:p.q,s.oc!==undefined?s.oc:p.o];}),
+        styles:{fontSize:8,cellPadding:2,overflow:'linebreak'},
+        bodyStyles:{minCellHeight:IMG_COL},
+        headStyles:{fillColor:DARK,textColor:[255,255,255],fontStyle:'bold',fontSize:7.5,minCellHeight:6},
+        columnStyles:{0:{cellWidth:IMG_COL},1:{cellWidth:22},2:{cellWidth:TW-IMG_COL-22-14-14},3:{cellWidth:14,halign:'center'},4:{cellWidth:14,halign:'center'}},
+        alternateRowStyles:{fillColor:[250,250,250]},
+        didDrawCell:function(data){
+          if(data.column.index===0&&data.section==='body'){
+            var prod=pisoProds[data.row.index];
+            var imgData=prod&&pisoCache[prod.c];
+            if(imgData){var pad=1.5,sz=data.cell.height-pad*2;try{pisoDoc.addImage(imgData,'JPEG',data.cell.x+pad,data.cell.y+pad,sz,sz);}catch(e){}}
+          }
+        },
+        didDrawPage:function(data){
+          pisoDoc.setFontSize(7);pisoDoc.setTextColor(150,150,150);
+          pisoDoc.text('JAMAR — Guías de Exhibición',MARGIN,290);
+          pisoDoc.text('Pág. '+pisoDoc.internal.getCurrentPageInfo().pageNumber,W-MARGIN,290,{align:'right'});
+        }
+      });
+    })(prods,imgCache,doc);
+    y = doc.lastAutoTable.finalY+8;
+  }
+  return doc;
+}
+
+async function genPDF(code) {
+  var g=getGuide(code); if(!g) return;
+  var cardBtn=document.querySelector('[data-code="'+code+'"][data-action="pdf"]');
+  var mBtn=document.getElementById('mPdfBtn');
+  var origCard=cardBtn?cardBtn.innerHTML:null;
+  if(cardBtn){cardBtn.innerHTML='Generando…';cardBtn.disabled=true;}
+  if(mBtn){mBtn.innerHTML='Generando…';mBtn.disabled=true;}
+  try{var doc=await buildPDF(g);doc.save(code+'_'+g.name.replace(/[^a-zA-Z0-9]/g,'_')+'.pdf');}
+  catch(e){console.error(e);}
+  if(cardBtn){cardBtn.innerHTML=origCard;cardBtn.disabled=false;}
+  if(mBtn){mBtn.innerHTML='&#8595; Descargar PDF';mBtn.disabled=false;}
+}
+
+function genXLSX(code) {
+  var g=getGuide(code); if(!g) return;
   var wb=XLSX.utils.book_new();
-  var rows=[['Piso','Código','Producto','Disponible','OC']];
-  Object.keys(g.pisos).sort().forEach(function(piso){
-    g.pisos[piso].forEach(function(p){var s=SAP[p.c]||{};rows.push([piso,p.c,p.n,s.s!==undefined?s.s:p.q,s.oc!==undefined?s.oc:p.o]);});
+  var rows=[['Piso','Código','Producto','Estado','Cantidad','OC']];
+  var pisoKeys=Object.keys(g.pisos).sort();
+  pisoKeys.forEach(function(piso){
+    g.pisos[piso].forEach(function(p){
+      var s=SAPD[p.c]||{}, st=prodStatus(p);
+      var stLabel=STATUS_LABELS[st]||st;
+      rows.push([piso,p.c,p.n,stLabel,s.s!==undefined?s.s:p.q,s.oc!==undefined?s.oc:p.o]);
+    });
   });
   var ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:6},{wch:14},{wch:50},{wch:12},{wch:10}];
-  XLSX.utils.book_append_sheet(wb,ws,g.code.substring(0,31));
-  XLSX.writeFile(wb,'Guia_'+g.code+'.xlsx');
+  ws['!cols']=[{wch:8},{wch:14},{wch:50},{wch:12},{wch:12},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,ws,code);
+  XLSX.writeFile(wb,code+'_'+g.name.replace(/[^a-zA-Z0-9]/g,'_')+'.xlsx');
 }
-function downloadPDF(g){if(g)alert('PDF: usa el botón desde la vista de guías principal.');}
-function downloadAllPDF(){alert('Función disponible en la página principal de guías.');}
-function downloadAllXLSX(){
+
+async function downloadAllPDF() {
+  var bar=document.getElementById('progressBar'), fill=document.getElementById('progressFill');
+  bar.style.display='block';
+  var jsPDF=window.jspdf.jsPDF;
+  var RED=[200,16,46], DARK=[26,26,46];
+  var W=210, MARGIN=15, TW=W-2*MARGIN, IMG_COL=16;
+  var master=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
+  var firstGuide=true;
+  for(var i=0;i<GUIDES.length;i++){
+    var g=GUIDES[i];
+    fill.style.width=((i/GUIDES.length)*100)+'%';
+    var allProds=[]; var pisoKeys=Object.keys(g.pisos).sort();
+    pisoKeys.forEach(function(pk){allProds=allProds.concat(g.pisos[pk]);});
+    var imgCache=await loadImgCache(allProds);
+    if(!firstGuide) master.addPage(); firstGuide=false;
+    master.setFillColor(RED[0],RED[1],RED[2]);
+    master.roundedRect(MARGIN,15,TW,18,3,3,'F');
+    master.setTextColor(255,255,255);
+    master.setFontSize(16); master.setFont('helvetica','bold');
+    master.text(g.code,MARGIN+4,26.5);
+    master.setFontSize(11); master.setFont('helvetica','normal');
+    master.text(g.name.toUpperCase(),MARGIN+44,26.5);
+    var y=40;
+    for(var j=0;j<pisoKeys.length;j++){
+      var piso=pisoKeys[j], prods=g.pisos[piso];
+      if(y>260){master.addPage();y=20;}
+      master.setFillColor(238,238,238);
+      master.rect(MARGIN,y,TW,7,'F');
+      master.setTextColor(DARK[0],DARK[1],DARK[2]);
+      master.setFontSize(9); master.setFont('helvetica','bold');
+      master.text('  PISO '+piso,MARGIN+2,y+5); y+=9;
+      (function(pisoProds,pisoCache,masterDoc){
+        masterDoc.autoTable({
+          startY:y, margin:{left:MARGIN,right:MARGIN},
+          head:[['','Código','Producto','Cant.','OC']],
+          body:pisoProds.map(function(p){var s=SAPD[p.c]||{};return['',p.c,p.n,s.s!==undefined?s.s:p.q,s.oc!==undefined?s.oc:p.o];}),
+          styles:{fontSize:8,cellPadding:2,overflow:'linebreak'},
+          bodyStyles:{minCellHeight:IMG_COL},
+          headStyles:{fillColor:DARK,textColor:[255,255,255],fontStyle:'bold',fontSize:7.5,minCellHeight:6},
+          columnStyles:{0:{cellWidth:IMG_COL},1:{cellWidth:22},2:{cellWidth:TW-IMG_COL-22-14-14},3:{cellWidth:14,halign:'center'},4:{cellWidth:14,halign:'center'}},
+          alternateRowStyles:{fillColor:[250,250,250]},
+          didDrawCell:function(data){
+            if(data.column.index===0&&data.section==='body'){
+              var prod=pisoProds[data.row.index];
+              var imgData=prod&&pisoCache[prod.c];
+              if(imgData){var pad=1.5,sz=data.cell.height-pad*2;try{masterDoc.addImage(imgData,'JPEG',data.cell.x+pad,data.cell.y+pad,sz,sz);}catch(e){}}
+            }
+          },
+          didDrawPage:function(data){
+            masterDoc.setFontSize(7);masterDoc.setTextColor(150,150,150);
+            masterDoc.text('JAMAR — Guías de Exhibición',MARGIN,290);
+            masterDoc.text('Pág. '+masterDoc.internal.getCurrentPageInfo().pageNumber,W-MARGIN,290,{align:'right'});
+          }
+        });
+      })(prods,imgCache,master);
+      y=master.lastAutoTable.finalY+8;
+    }
+    await new Promise(function(r){setTimeout(r,5);});
+  }
+  fill.style.width='100%';
+  master.save('Guias_Exhibicion_Jamar_Completo.pdf');
+  setTimeout(function(){bar.style.display='none';fill.style.width='0%';},1000);
+}
+
+function downloadAllXLSX() {
   var wb=XLSX.utils.book_new();
-  var sum=[['Código','Nombre','Pisos','Total Productos']];
-  GUIDES.forEach(function(g){sum.push([g.code,g.name,Object.keys(g.pisos).join(', '),Object.values(g.pisos).reduce(function(s,a){return s+a.length;},0)]);});
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sum),'Resumen');
+  var summaryRows=[['Código','Nombre','Pisos','Total Productos','Inactivos']];
   GUIDES.forEach(function(g){
-    var rows=[['Piso','Código','Producto','Disponible','OC']];
-    Object.keys(g.pisos).sort().forEach(function(piso){g.pisos[piso].forEach(function(p){var s=SAP[p.c]||{};rows.push([piso,p.c,p.n,s.s!==undefined?s.s:p.q,s.oc!==undefined?s.oc:p.o]);});});
-    var ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:6},{wch:14},{wch:50},{wch:12},{wch:10}];
+    var total=Object.values(g.pisos).reduce(function(s,a){return s+a.length;},0);
+    var inact=Object.values(g.pisos).flat().filter(function(p){return prodStatus(p)==='N';}).length;
+    summaryRows.push([g.code,g.name,Object.keys(g.pisos).join(', '),total,inact]);
+  });
+  var wsSummary=XLSX.utils.aoa_to_sheet(summaryRows);
+  wsSummary['!cols']=[{wch:10},{wch:35},{wch:12},{wch:16},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,wsSummary,'Resumen');
+  GUIDES.forEach(function(g){
+    var rows=[['Piso','Código','Producto','Estado','Cantidad','OC']];
+    Object.keys(g.pisos).sort().forEach(function(piso){
+      g.pisos[piso].forEach(function(p){
+        var s=SAPD[p.c]||{}, st=prodStatus(p);
+        var stLabel=STATUS_LABELS[st]||st;
+        rows.push([piso,p.c,p.n,stLabel,s.s!==undefined?s.s:p.q,s.oc!==undefined?s.oc:p.o]);
+      });
+    });
+    var ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:8},{wch:14},{wch:50},{wch:12},{wch:12},{wch:10}];
     XLSX.utils.book_append_sheet(wb,ws,g.code.substring(0,31));
   });
   XLSX.writeFile(wb,'Guias_Exhibicion_Jamar_Completo.xlsx');
 }
 
-// ─── Market Basket Upload ─────────────────────────────────────────────────────
+// ─── Market Basket Upload ────────────────────────────────────────────────────
 var dz=document.getElementById('dropZone'), fi=document.getElementById('fileInput');
 dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('drag-over');});
 dz.addEventListener('dragleave',function(){dz.classList.remove('drag-over');});
@@ -415,7 +649,6 @@ function handleFile(file) {
         setProc('Cruzando con guías…',80);
         setTimeout(function(){
           EVALUATED=evaluateGuides(GUIDES,result.mbData,result.nameToCode);
-          MB_LOADED=true;
           setProc('Listo',100);
           setTimeout(function(){
             document.getElementById('eval-proc').style.display='none';
@@ -435,7 +668,7 @@ function handleFile(file) {
 }
 function setProc(txt,pct){document.getElementById('proc-text').textContent=txt;document.getElementById('proc-fill').style.width=pct+'%';}
 
-// ─── Parse Market Basket ──────────────────────────────────────────────────────
+// ─── Parse Market Basket ─────────────────────────────────────────────────────
 function parseMarketBasket(buf) {
   var wb=XLSX.read(new Uint8Array(buf),{type:'array'});
   var ws=wb.Sheets[wb.SheetNames[0]];
@@ -473,20 +706,21 @@ function parseMarketBasket(buf) {
   return {mbData:mbData, nameToCode:n2c};
 }
 
-// ─── Evaluate ─────────────────────────────────────────────────────────────────
+// ─── Evaluate ────────────────────────────────────────────────────────────────
 function evaluateGuides(guides, mbData, n2c) {
   return guides.map(function(guide){
     var gc={}, gn2c={};
     Object.values(guide.pisos).forEach(function(ps){ps.forEach(function(p){gc[p.c]=true;gn2c[p.n]=p.c;});});
-    var stats=[]; var ti=0, te=0;
+    var stats=[], ti=0, te=0;
     Object.entries(guide.pisos).forEach(function(pe){
       var piso=pe[0], prods=pe[1];
       prods.forEach(function(prod){
         var mb=mbData[prod.c];
-        if(!mb||!Object.keys(mb.co).length){stats.push({code:prod.c,name:prod.n,piso:piso,internal:0,external:0,total:0,pct:null,topExternal:[],topInternal:[],noData:true});return;}
-        var intl=0,extl=0,ep=[],ip=[];
+        var st=prodStatus(prod);
+        if(!mb||!Object.keys(mb.co).length){stats.push({code:prod.c,name:prod.n,piso:piso,status:st,internal:0,external:0,total:0,pct:null,topExternal:[],topInternal:[],noData:true});return;}
+        var intl=0, extl=0, ep=[], ip=[];
         Object.entries(mb.co).forEach(function(en){
-          var cn=en[0],cnt=+en[1];
+          var cn=en[0], cnt=+en[1];
           var cc=n2c[cn]||gn2c[cn]||null;
           if(cc&&gc[cc]){intl+=cnt;ip.push({name:cn,code:cc,count:cnt});}
           else{extl+=cnt;ep.push({name:cn,code:cc||'?',count:cnt});}
@@ -494,7 +728,7 @@ function evaluateGuides(guides, mbData, n2c) {
         ep.sort(function(a,b){return b.count-a.count;});
         ip.sort(function(a,b){return b.count-a.count;});
         var tot=intl+extl, pct=tot>0?Math.round(intl/tot*100):null;
-        stats.push({code:prod.c,name:prod.n,piso:piso,internal:intl,external:extl,total:tot,pct:pct,topExternal:ep.slice(0,5),topInternal:ip.slice(0,3),noData:false});
+        stats.push({code:prod.c,name:prod.n,piso:piso,status:st,internal:intl,external:extl,total:tot,pct:pct,topExternal:ep.slice(0,5),topInternal:ip.slice(0,3),noData:false});
         ti+=intl; te+=extl;
       });
     });
@@ -542,42 +776,42 @@ function renderEvalGrid(){
       ? allExt.slice(0,3).map(function(e){return '<div class="ext-item"><span class="ext-name">'+e.name+'</span><span>'+fn(e.count)+'</span></div>';}).join('')
       : '<div class="nodata-msg">Sin datos en market basket</div>';
     return '<div class="gcard" onclick="openEModal(\''+g.code+'\')">' +
-      '<div class="gcard-head"><div class="gcode">'+g.code+'</div><div class="gname">'+g.name+'</div><div class="gscore-badge">'+t.icon+' '+pt+'</div></div>' +
-      '<div class="gcard-body">' +
-      '<div class="cohesion-row"><span style="font-size:18px">'+t.icon+'</span><div><div class="cohesion-pct">'+pt+'</div><div class="cohesion-label">ventas dentro de la guía · '+t.label+'</div></div></div>' +
-      '<div class="mini-bar"><div class="mini-bar-fill" style="width:'+bw+'%;background:'+bc[t.cls]+'"></div></div>' +
+      '<div class="gcard-head"><div class="gcode">'+g.code+'</div><div class="gname">'+g.name+'</div><div class="gscore-badge">'+t.icon+' '+pt+'</div></div>'+
+      '<div class="gcard-body">'+
+      '<div class="cohesion-row"><span style="font-size:18px">'+t.icon+'</span><div><div class="cohesion-pct">'+pt+'</div><div class="cohesion-label">ventas dentro de la guía · '+t.label+'</div></div></div>'+
+      '<div class="mini-bar"><div class="mini-bar-fill" style="width:'+bw+'%;background:'+bc[t.cls]+'"></div></div>'+
       (g.hasData?'<div class="ext-title">TOP PRODUCTOS QUE SE VAN POR FUERA</div>':'')+
       '<div>'+extH+'</div></div></div>';
   }).join('');
 }
 
 function openEModal(code){
-  var g=EVALUATED.find(function(x){return x.code===code;});if(!g) return;
+  var g=EVALUATED.find(function(x){return x.code===code;}); if(!g) return;
   var t=tl(g.cohesion);
   document.getElementById('ecode').textContent=g.code;
   document.getElementById('ename').textContent=g.name;
   document.getElementById('escore').textContent=t.icon+' '+(g.cohesion!==null?g.cohesion+'% cohesión':'Sin datos');
   var html='';
   if(g.hasData) html+='<div class="msummary">'+
-    '<div class="mstat"><div class="mstat-val" style="color:var(--green)">'+fn(g.totalInternal)+'</div><div class="mstat-label">CO-VENTAS DENTRO DE LA GUÍA</div></div>'+
+    '<div class="mstat"><div class="mstat-val" style="color:#2E7D32">'+fn(g.totalInternal)+'</div><div class="mstat-label">CO-VENTAS DENTRO DE LA GUÍA</div></div>'+
     '<div class="mstat"><div class="mstat-val" style="color:var(--red)">'+fn(g.totalExternal)+'</div><div class="mstat-label">CO-VENTAS FUERA DE LA GUÍA</div></div>'+
     '<div class="mstat"><div class="mstat-val">'+fn(g.totalCo)+'</div><div class="mstat-label">TOTAL CO-VENTAS</div></div></div>';
   var pisos={};
   g.productStats.forEach(function(p){if(!pisos[p.piso])pisos[p.piso]=[];pisos[p.piso].push(p);});
   Object.entries(pisos).forEach(function(pe){
-    var piso=pe[0],prods=pe[1];
+    var piso=pe[0], prods=pe[1];
     html+='<div class="eval-piso-title">PISO '+piso+'</div>';
-    html+='<table class="etable"><thead><tr><th>Código</th><th>Producto</th><th style="text-align:center">% Interno</th><th>Top co-ventas externas</th></tr></thead><tbody>';
+    html+='<table class="etable"><thead><tr><th>Código</th><th>Producto</th><th style="text-align:center">Estado</th><th style="text-align:center">% Interno</th><th>Top co-ventas externas</th></tr></thead><tbody>';
     prods.forEach(function(p){
       var t2=tl(p.pct);
       var pctH=p.noData?'<span class="pct-cell gray">—</span>':'<span class="pct-cell '+t2.cls+'">'+(p.pct!==null?p.pct+'%':'—')+'</span>';
       var extH2='';
-      if(p.noData) extH2='<span style="color:#aaa;font-size:11px">Sin datos</span>';
-      else if(!p.topExternal.length) extH2='<span style="color:var(--green);font-size:11px">✓ Vende 100% dentro de la guía</span>';
+      if(p.noData) extH2='<span style="color:#aaa;font-size:11px">Sin datos en market basket</span>';
+      else if(!p.topExternal.length) extH2='<span style="color:#2E7D32;font-size:11px">✓ Vende 100% dentro de la guía</span>';
       else p.topExternal.forEach(function(e){extH2+='<div class="ext-mini">• '+e.name+(e.code!=='?'?' <span style="color:#ccc">('+e.code+')</span>':'')+' — <strong>'+fn(e.count)+'</strong> veces</div>';});
       var intH='';
       if(!p.noData&&p.topInternal.length) intH='<div class="int-mini">Interno: '+p.topInternal.slice(0,2).map(function(i){return i.name+' ('+fn(i.count)+')';}).join(', ')+'</div>';
-      html+='<tr><td style="font-size:11px;white-space:nowrap">'+p.code+'</td><td><strong>'+p.name+'</strong>'+intH+'</td><td style="text-align:center">'+pctH+'</td><td>'+extH2+'</td></tr>';
+      html+='<tr><td style="font-size:11px;white-space:nowrap">'+p.code+'</td><td><strong>'+p.name+'</strong>'+intH+'</td><td style="text-align:center">'+statusLabel(p.status)+'</td><td style="text-align:center">'+pctH+'</td><td>'+extH2+'</td></tr>';
     });
     html+='</tbody></table>';
   });
