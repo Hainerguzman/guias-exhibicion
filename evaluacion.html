@@ -3,10 +3,12 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Evaluación de Guías — Jamar</title>
+<title>Guías de Exhibición — Jamar</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
-:root{--red:#C8102E;--dark:#1A1A2E;--border:#E0E0E0;--shadow:0 2px 8px rgba(0,0,0,.12);--green:#2E7D32;--yellow:#F57F17;--gray:#757575}
+:root{--red:#C8102E;--dark:#1A1A2E;--border:#E0E0E0;--shadow:0 2px 8px rgba(0,0,0,.12);--green:#2E7D32;--yellow:#F57F17}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F2F5;color:var(--dark);min-height:100vh}
 /* LOGIN */
@@ -14,550 +16,576 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F2F5;color:var(--dark
 #login-overlay.hidden{display:none}
 .login-box{background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.14);padding:40px 36px;width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;gap:20px}
 .login-logo{font-size:32px;font-weight:900;letter-spacing:-1px;color:var(--red)}
-.login-sub{font-size:13px;color:#666;margin-top:-12px;text-align:center}
+.login-subtitle{font-size:13px;color:#666;margin-top:-12px;text-align:center}
 .login-box input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none;transition:border-color .2s;font-family:inherit}
 .login-box input:focus{border-color:var(--red)}
 .login-btn{width:100%;padding:12px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
 .login-btn:hover{filter:brightness(.9)}
 .login-error{color:var(--red);font-size:12px;text-align:center;min-height:16px}
 /* HEADER */
-header{background:var(--red);color:#fff;padding:0 24px;display:flex;align-items:center;gap:16px;height:64px;box-shadow:var(--shadow)}
-.logo{font-size:26px;font-weight:900;letter-spacing:-1px}
+header{background:var(--red);color:#fff;padding:0 24px;display:flex;align-items:center;gap:16px;height:64px;box-shadow:var(--shadow);flex-wrap:wrap}
+.logo{font-size:26px;font-weight:900;letter-spacing:-1px;white-space:nowrap}
 .htitle{font-size:14px;opacity:.88;flex:1}
-.nav-link{background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.45);color:#fff;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}
-.nav-link:hover{background:rgba(255,255,255,.32)}
-/* UPLOAD */
-#upload-section{padding:32px 24px;display:flex;flex-direction:column;align-items:center;gap:24px}
-.upload-title{font-size:20px;font-weight:700;color:var(--dark)}
-.upload-sub{font-size:13px;color:#666;text-align:center;max-width:480px}
-.drop-zone{width:100%;max-width:520px;border:2.5px dashed #C8102E55;border-radius:16px;padding:40px 24px;text-align:center;cursor:pointer;background:#fff;transition:all .2s;position:relative}
-.drop-zone.drag-over{border-color:var(--red);background:#FFF5F5}
-.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
-.drop-icon{font-size:48px;margin-bottom:12px}
-.drop-text{font-size:14px;color:#555;line-height:1.6}
-.drop-text strong{color:var(--red)}
-/* PROGRESS */
-#proc-section{padding:48px 24px;text-align:center;display:none}
-.proc-spinner{width:48px;height:48px;border:4px solid #EEE;border-top-color:var(--red);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.proc-text{font-size:14px;color:#666}
-.proc-bar{width:100%;max-width:400px;height:6px;background:#EEE;border-radius:3px;margin:16px auto 0;overflow:hidden}
-.proc-fill{height:100%;background:var(--red);width:0%;transition:width .3s}
-/* RESULTS */
-#results-section{display:none}
+.bulk-btns{display:flex;gap:8px}
+.bulk-btn{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.45);color:#fff;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap;transition:background .2s}
+.bulk-btn:hover{background:rgba(255,255,255,.32)}
+/* TOOLBAR */
 .toolbar{background:#fff;border-bottom:1px solid var(--border);padding:12px 24px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;position:sticky;top:0;z-index:100;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .sw{position:relative;flex:1;min-width:180px}
 .sw svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#999;pointer-events:none}
-.sw input{width:100%;padding:9px 12px 9px 34px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none}
+.sw input{width:100%;padding:9px 12px 9px 34px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;transition:border-color .2s}
 .sw input:focus{border-color:var(--red)}
 .fbtns{display:flex;gap:6px}
-.fb{padding:7px 16px;border:1.5px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:12px;font-weight:700;color:#555}
+.fb{padding:7px 16px;border:1.5px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:12px;font-weight:700;color:#555;transition:all .2s}
 .fb.active,.fb:hover{background:var(--red);border-color:var(--red);color:#fff}
+.fb.eval-tab{border-color:#7B1FA2;color:#7B1FA2}
+.fb.eval-tab.active,.fb.eval-tab:hover{background:#7B1FA2;border-color:#7B1FA2;color:#fff}
 .cbadge{background:#F5F5F5;color:#666;font-size:12px;padding:4px 10px;border-radius:20px;white-space:nowrap}
-.stats-bar{display:flex;gap:16px;padding:16px 24px;flex-wrap:wrap}
-.stat-card{background:#fff;border-radius:10px;padding:12px 20px;flex:1;min-width:160px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:4px}
-.stat-val{font-size:28px;font-weight:900;color:var(--dark)}
-.stat-val.green{color:var(--green)}
-.stat-val.yellow{color:var(--yellow)}
-.stat-val.red{color:var(--red)}
-.stat-label{font-size:11px;color:#888;font-weight:600;letter-spacing:.3px}
-/* GRID */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;padding:8px 24px 24px}
-.gcard{background:#fff;border-radius:12px;box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:box-shadow .2s,transform .15s}
-.gcard:hover{box-shadow:0 6px 20px rgba(0,0,0,.14);transform:translateY(-2px)}
-.gcard-head{background:var(--red);padding:12px 14px;display:flex;align-items:center;gap:10px}
-.gcode{font-size:19px;font-weight:900;color:#fff;min-width:58px}
-.gname{font-size:11.5px;color:rgba(255,255,255,.9);line-height:1.35;flex:1}
-.gscore-badge{background:rgba(255,255,255,.2);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:700;color:#fff;white-space:nowrap}
-.gcard-body{padding:12px 14px}
-.cohesion-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.traffic-light{font-size:20px}
-.cohesion-pct{font-size:22px;font-weight:900;color:var(--dark)}
-.cohesion-label{font-size:11px;color:#888}
-.mini-bar{height:8px;background:#F0F0F0;border-radius:4px;overflow:hidden;margin-bottom:8px}
-.mini-bar-fill{height:100%;border-radius:4px;transition:width .5s}
-.ext-title{font-size:10px;font-weight:700;color:#888;margin-bottom:4px;letter-spacing:.3px}
-.ext-list{display:flex;flex-direction:column;gap:2px}
-.ext-item{display:flex;justify-content:space-between;font-size:11px;color:#555}
-.ext-item span{color:#888}
-.nodata-msg{font-size:12px;color:#aaa;font-style:italic;padding:8px 0}
-/* MODAL */
+/* GUIDES GRID */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;padding:20px 24px}
+.card{background:#fff;border-radius:12px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .2s,transform .15s}
+.card:hover{box-shadow:0 6px 20px rgba(0,0,0,.14);transform:translateY(-2px)}
+.ch{background:var(--red);padding:12px 14px;display:flex;align-items:center;gap:10px}
+.ccode{font-size:19px;font-weight:900;color:#fff;min-width:58px}
+.cname{font-size:11.5px;color:rgba(255,255,255,.9);line-height:1.35;flex:1}
+.cb{padding:10px 14px;flex:1}
+.cimg-row{display:flex;gap:6px;overflow-x:auto;padding:8px 14px 4px;scrollbar-width:thin}
+.cimg-row img{width:64px;height:64px;object-fit:contain;border-radius:6px;border:1px solid var(--border);background:#fafafa;flex-shrink:0}
+.meta{display:flex;gap:8px;flex-wrap:wrap}
+.pill{display:flex;align-items:center;gap:4px;font-size:11px;color:#555;background:#F5F5F5;padding:3px 9px;border-radius:20px}
+.cf{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--border);background:#FAFAFA}
+.dlbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:9px 6px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:none;transition:filter .2s}
+.dlbtn:hover{filter:brightness(.9)}
+.dlbtn.pdf{background:#FFEBEE;color:var(--red)}
+.dlbtn.xl{background:#E8F5E9;color:#2E7D32}
+.dlbtn.view{background:#E3F2FD;color:#1565C0}
+.empty{grid-column:1/-1;text-align:center;padding:60px 20px;color:#aaa}
+.loading{grid-column:1/-1;text-align:center;padding:60px 20px;color:#aaa;font-size:16px}
+/* MODAL GUIAS */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center}
 .overlay.open{display:flex}
-.modal{background:#fff;border-radius:16px;width:90%;max-width:780px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal{background:#fff;border-radius:16px;width:90%;max-width:700px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .mhead{background:var(--red);padding:16px 20px;border-radius:16px 16px 0 0;display:flex;align-items:center;gap:12px}
 .mcode{font-size:22px;font-weight:900;color:#fff}
 .mname{font-size:13px;color:rgba(255,255,255,.9);flex:1}
-.mscore{background:rgba(255,255,255,.2);border-radius:20px;padding:5px 12px;font-size:13px;font-weight:700;color:#fff}
-.mclose{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:0 4px}
+.mclose{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;padding:0 4px}
 .mbody{overflow-y:auto;padding:16px 20px;flex:1}
-.msummary{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
-.mstat{background:#F5F5F5;border-radius:8px;padding:10px 16px;flex:1;min-width:120px}
-.mstat-val{font-size:20px;font-weight:900;color:var(--dark)}
-.mstat-label{font-size:10px;color:#888;font-weight:600}
-.piso-title{font-size:11px;font-weight:700;color:#fff;background:var(--dark);padding:5px 10px;border-radius:6px;margin:12px 0 8px;display:inline-block}
+.piso-title{font-size:11px;font-weight:700;color:#fff;background:var(--dark);padding:5px 10px;border-radius:6px;margin:10px 0 6px;display:inline-block;letter-spacing:.5px}
 table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:4px}
 th{background:#F5F5F5;font-weight:700;padding:7px 8px;text-align:left;border-bottom:2px solid var(--dark);font-size:11px}
-td{padding:6px 8px;border-bottom:1px solid #EEE;vertical-align:top}
+td{padding:6px 8px;border-bottom:1px solid #EEE;vertical-align:middle}
 tr:nth-child(even){background:#FAFAFA}
+td:last-child,td:nth-child(3){text-align:center}
+.prod-img{width:44px;height:44px;object-fit:contain;border-radius:4px;border:1px solid #eee;background:#fafafa;display:block}
+.mfooter{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:10px;background:#FAFAFA;border-radius:0 0 16px 16px}
+.mfooter .dlbtn{font-size:13px;padding:10px}
+footer{text-align:center;padding:20px;font-size:11px;color:#aaa;border-top:1px solid var(--border);background:#fff;margin-top:8px}
+.progress-bar{display:none;position:fixed;top:0;left:0;right:0;height:3px;background:#FFCDD2;z-index:9999}
+.progress-fill{height:100%;background:var(--red);width:0%;transition:width .1s}
+
+/* ── EVALUACIÓN TAB ── */
+#eval-section{display:none;padding:0}
+/* Upload */
+.eval-upload-wrap{padding:32px 24px;display:flex;flex-direction:column;align-items:center;gap:20px}
+.eval-title{font-size:18px;font-weight:700;color:var(--dark)}
+.drop-zone{width:100%;max-width:500px;border:2.5px dashed #C8102E55;border-radius:16px;padding:36px 24px;text-align:center;cursor:pointer;background:#fff;transition:all .2s;position:relative}
+.drop-zone.drag-over{border-color:var(--red);background:#FFF5F5}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop-icon{font-size:44px;margin-bottom:10px}
+.drop-text{font-size:13px;color:#555;line-height:1.6}
+.drop-text strong{color:var(--red)}
+/* Processing */
+#eval-proc{padding:48px 24px;text-align:center;display:none}
+.proc-spinner{width:44px;height:44px;border:4px solid #EEE;border-top-color:var(--red);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.proc-text{font-size:13px;color:#666}
+.proc-bar{width:100%;max-width:360px;height:5px;background:#EEE;border-radius:3px;margin:12px auto 0;overflow:hidden}
+.proc-fill{height:100%;background:var(--red);width:0%;transition:width .3s}
+/* Eval results */
+#eval-results{display:none}
+.stats-bar{display:flex;gap:12px;padding:16px 24px;flex-wrap:wrap}
+.stat-card{background:#fff;border-radius:10px;padding:10px 18px;flex:1;min-width:130px;box-shadow:var(--shadow)}
+.stat-val{font-size:26px;font-weight:900;color:var(--dark)}
+.stat-val.green{color:var(--green)}
+.stat-val.red{color:var(--red)}
+.stat-val.yellow{color:var(--yellow)}
+.stat-label{font-size:10px;color:#888;font-weight:600;letter-spacing:.3px}
+.eval-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;padding:8px 24px 24px}
+.gcard{background:#fff;border-radius:12px;box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:box-shadow .2s,transform .15s}
+.gcard:hover{box-shadow:0 6px 20px rgba(0,0,0,.14);transform:translateY(-2px)}
+.gcard-head{background:var(--red);padding:12px 14px;display:flex;align-items:center;gap:10px}
+.gcode{font-size:18px;font-weight:900;color:#fff}
+.gname{font-size:11px;color:rgba(255,255,255,.9);line-height:1.3;flex:1}
+.gscore-badge{background:rgba(255,255,255,.2);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:700;color:#fff;white-space:nowrap}
+.gcard-body{padding:12px 14px}
+.cohesion-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.cohesion-pct{font-size:20px;font-weight:900;color:var(--dark)}
+.cohesion-label{font-size:10px;color:#888}
+.mini-bar{height:7px;background:#F0F0F0;border-radius:4px;overflow:hidden;margin-bottom:8px}
+.mini-bar-fill{height:100%;border-radius:4px}
+.ext-title{font-size:10px;font-weight:700;color:#888;margin-bottom:3px;letter-spacing:.3px}
+.ext-item{display:flex;justify-content:space-between;font-size:11px;color:#555;gap:8px}
+.ext-item .ext-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.nodata-msg{font-size:11px;color:#aaa;font-style:italic;padding:4px 0}
+/* Eval modal */
+.emodal{background:#fff;border-radius:16px;width:90%;max-width:800px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.eoverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;align-items:center;justify-content:center}
+.eoverlay.open{display:flex}
+.ehead{background:#7B1FA2;padding:16px 20px;border-radius:16px 16px 0 0;display:flex;align-items:center;gap:12px}
+.ecode{font-size:20px;font-weight:900;color:#fff}
+.ename{font-size:13px;color:rgba(255,255,255,.9);flex:1}
+.escore{background:rgba(255,255,255,.2);border-radius:20px;padding:4px 12px;font-size:13px;font-weight:700;color:#fff}
+.eclose{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:0 4px}
+.ebody{overflow-y:auto;padding:16px 20px;flex:1}
+.msummary{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.mstat{background:#F5F5F5;border-radius:8px;padding:8px 14px;flex:1;min-width:110px}
+.mstat-val{font-size:18px;font-weight:900}
+.mstat-label{font-size:10px;color:#888;font-weight:600}
+.eval-piso-title{font-size:11px;font-weight:700;color:#fff;background:#7B1FA2;padding:4px 10px;border-radius:6px;margin:10px 0 6px;display:inline-block}
+.etable{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:4px}
+.etable th{background:#F5F5F5;font-weight:700;padding:6px 8px;text-align:left;border-bottom:2px solid var(--dark);font-size:11px}
+.etable td{padding:5px 8px;border-bottom:1px solid #EEE;vertical-align:top}
+.etable tr:nth-child(even){background:#FAFAFA}
 .pct-cell{font-weight:700;font-size:13px;text-align:center}
 .pct-cell.green{color:var(--green)}
 .pct-cell.yellow{color:var(--yellow)}
 .pct-cell.red{color:var(--red)}
-.pct-cell.gray{color:var(--gray)}
+.pct-cell.gray{color:#999}
 .ext-mini{font-size:10px;color:#888;margin-top:2px}
 .int-mini{font-size:10px;color:var(--green);margin-top:2px}
-footer{text-align:center;padding:16px;font-size:11px;color:#aaa;border-top:1px solid var(--border);background:#fff;margin-top:8px}
 </style>
 </head>
 <body>
 
 <!-- LOGIN -->
 <div id="login-overlay">
-  <div class="login-box">
-    <div class="login-logo">JAMAR</div>
-    <div class="login-sub">Evaluación de Guías de Exhibición<br>Acceso restringido</div>
-    <input type="text" id="login-user" placeholder="Usuario" autocomplete="username"/>
-    <input type="password" id="login-pass" placeholder="Contraseña" autocomplete="current-password"/>
-    <div class="login-error" id="login-error"></div>
-    <button class="login-btn" id="login-btn">Ingresar</button>
-  </div>
+<div class="login-box">
+  <div class="login-logo">JAMAR</div>
+  <div class="login-subtitle">Guias de Exhibicion<br>Acceso restringido</div>
+  <input type="text" id="login-user" placeholder="Usuario" autocomplete="username"/>
+  <input type="password" id="login-pass" placeholder="Contrasena" autocomplete="current-password"/>
+  <div class="login-error" id="login-error"></div>
+  <button class="login-btn" id="login-btn">Ingresar</button>
+  <div style="font-size:11px;color:#aaa;text-align:center">Solo personal autorizado Jamar</div>
 </div>
-<script>
-(function(){
-  var K='jm_auth_ok';
-  if(sessionStorage.getItem(K)==='1'){document.getElementById('login-overlay').classList.add('hidden');}
-  function go(){
-    var u=document.getElementById('login-user').value.trim();
-    var p=document.getElementById('login-pass').value;
-    if(u==='CVISUALJAM'&&p==='Guias26**'){sessionStorage.setItem(K,'1');document.getElementById('login-overlay').classList.add('hidden');}
-    else{document.getElementById('login-error').textContent='Usuario o contraseña incorrectos';document.getElementById('login-pass').value='';document.getElementById('login-pass').focus();}
-  }
-  document.getElementById('login-btn').addEventListener('click',go);
-  document.getElementById('login-pass').addEventListener('keydown',function(e){if(e.key==='Enter')go();});
-  document.getElementById('login-user').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('login-pass').focus();});
-})();
-</script>
+</div>
+<script>(function(){
+var K='jm_auth_ok';
+if(sessionStorage.getItem(K)==='1'){document.getElementById('login-overlay').classList.add('hidden');}
+function go(){
+  var u=document.getElementById('login-user').value.trim();
+  var p=document.getElementById('login-pass').value;
+  if(u==='CVISUALJAM'&&p==='Guias26**'){sessionStorage.setItem(K,'1');document.getElementById('login-overlay').classList.add('hidden');}
+  else{document.getElementById('login-error').textContent='Usuario o contrasena incorrectos';document.getElementById('login-pass').value='';document.getElementById('login-pass').focus();}
+}
+document.getElementById('login-btn').addEventListener('click',go);
+document.getElementById('login-pass').addEventListener('keydown',function(e){if(e.key==='Enter')go();});
+document.getElementById('login-user').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('login-pass').focus();});
+})();</script>
 
-<!-- HEADER -->
+<div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+
 <header>
   <div class="logo">JAMAR</div>
-  <div class="htitle">Evaluación de Guías de Exhibición</div>
-  <a class="nav-link" href="index.html">← Ver Guías</a>
+  <div class="htitle" id="htitle">Guías de Exhibición</div>
+  <div class="bulk-btns" id="bulk-btns">
+    <button class="bulk-btn" onclick="downloadAllPDF()">↓ Todas en PDF</button>
+    <button class="bulk-btn" onclick="downloadAllXLSX()">↓ Todas en Excel</button>
+  </div>
 </header>
 
-<!-- UPLOAD SECTION -->
-<div id="upload-section">
-  <div class="upload-title">📊 Análisis de Market Basket</div>
-  <div class="upload-sub">Sube el archivo Excel del reporte Market Basket de Tableau para evaluar qué tan bien están funcionando las guías de exhibición.</div>
-  <div class="drop-zone" id="dropZone">
-    <input type="file" id="fileInput" accept=".xlsx,.xls"/>
-    <div class="drop-icon">📂</div>
-    <div class="drop-text">
-      <strong>Arrastra el archivo aquí</strong><br>
-      o haz clic para buscarlo<br>
-      <span style="font-size:12px;color:#aaa">Formato: Excel (.xlsx) — Market Basket Productos</span>
+<div class="toolbar">
+  <div class="sw" id="sw-search">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="searchInput" placeholder="Buscar guia, producto o codigo..." oninput="render()"/>
+  </div>
+  <div class="fbtns" id="filter-btns">
+    <button class="fb active" onclick="setFilter('all',this)">Todas</button>
+    <button class="fb" onclick="setFilter('DOR',this)">Dormitorio</button>
+    <button class="fb" onclick="setFilter('SOC',this)">Social</button>
+  </div>
+  <div class="fbtns">
+    <button class="fb eval-tab" id="eval-tab-btn" onclick="toggleEval(this)">📊 Evaluación</button>
+  </div>
+  <span class="cbadge" id="countBadge">Cargando…</span>
+</div>
+
+<!-- GUÍAS VIEW -->
+<div id="guides-view">
+  <div class="grid" id="grid"><div class="loading">Cargando guías…</div></div>
+</div>
+
+<!-- EVALUACIÓN SECTION -->
+<div id="eval-section">
+  <!-- Upload -->
+  <div class="eval-upload-wrap" id="eval-upload">
+    <div class="eval-title">📊 Evaluación de Cohesión por Guía</div>
+    <p style="font-size:13px;color:#666;text-align:center;max-width:460px">Sube el reporte Market Basket de Tableau para ver qué tan bien se venden juntos los productos de cada guía.</p>
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".xlsx,.xls"/>
+      <div class="drop-icon">📂</div>
+      <div class="drop-text"><strong>Arrastra el archivo aquí</strong><br>o haz clic para buscarlo<br><span style="font-size:11px;color:#aaa">Excel (.xlsx) — Market Basket Productos</span></div>
     </div>
+  </div>
+  <!-- Processing -->
+  <div id="eval-proc">
+    <div class="proc-spinner"></div>
+    <div class="proc-text" id="proc-text">Procesando…</div>
+    <div class="proc-bar"><div class="proc-fill" id="proc-fill"></div></div>
+  </div>
+  <!-- Results -->
+  <div id="eval-results">
+    <div class="stats-bar" id="stats-bar"></div>
+    <div class="eval-grid" id="eval-grid"></div>
   </div>
 </div>
 
-<!-- PROCESSING -->
-<div id="proc-section">
-  <div class="proc-spinner"></div>
-  <div class="proc-text" id="proc-text">Leyendo archivo Excel…</div>
-  <div class="proc-bar"><div class="proc-fill" id="proc-fill"></div></div>
-</div>
-
-<!-- RESULTS -->
-<div id="results-section">
-  <div class="stats-bar" id="stats-bar"></div>
-  <div class="toolbar">
-    <div class="sw">
-      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" id="searchInput" placeholder="Buscar guía o producto…" oninput="renderGrid()"/>
-    </div>
-    <div class="fbtns">
-      <button class="fb active" onclick="setFilter('all',this)">Todas</button>
-      <button class="fb" onclick="setFilter('DOR',this)">Dormitorio</button>
-      <button class="fb" onclick="setFilter('SOC',this)">Social</button>
-    </div>
-    <div class="fbtns">
-      <button class="fb active" onclick="setSort('score',this)" id="sort-score">Por cohesión</button>
-      <button class="fb" onclick="setSort('alpha',this)" id="sort-alpha">A–Z</button>
-    </div>
-    <span class="cbadge" id="countBadge">—</span>
-  </div>
-  <div class="grid" id="grid"></div>
-</div>
-
-<!-- MODAL -->
+<!-- MODAL GUÍAS -->
 <div class="overlay" id="overlay" onclick="closeModal(event)">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div class="mhead">
-      <div class="mcode" id="mcode"></div>
-      <div class="mname" id="mname"></div>
-      <div class="mscore" id="mscore"></div>
-      <button class="mclose" onclick="closeModal()">✕</button>
-    </div>
-    <div class="mbody" id="mbody"></div>
+<div class="modal">
+  <div class="mhead">
+    <div class="mcode" id="mcode"></div>
+    <div class="mname" id="mname"></div>
+    <button class="mclose" onclick="closeModal()">✕</button>
+  </div>
+  <div class="mbody" id="mbody"></div>
+  <div class="mfooter">
+    <button class="dlbtn pdf" onclick="downloadPDF(currentGuide)">↓ PDF</button>
+    <button class="dlbtn xl" onclick="downloadXLSX(currentGuide)">↓ Excel</button>
   </div>
 </div>
+</div>
 
-<footer>JAMAR — Evaluación de Guías de Exhibición · Datos actualizados automáticamente</footer>
+<!-- MODAL EVALUACIÓN -->
+<div class="eoverlay" id="eoverlay" onclick="closeEModal(event)">
+<div class="emodal">
+  <div class="ehead">
+    <div class="ecode" id="ecode"></div>
+    <div class="ename" id="ename"></div>
+    <div class="escore" id="escore"></div>
+    <button class="eclose" onclick="closeEModal()">✕</button>
+  </div>
+  <div class="ebody" id="ebody"></div>
+</div>
+</div>
+
+<footer>JAMAR — Guías de Exhibición · Datos actualizados automáticamente</footer>
 
 <script>
-// ── State ──────────────────────────────────────────────────────────────────
-var GUIDES = [];
+// ─── State ────────────────────────────────────────────────────────────────────
+var GUIDES = [], SAP = {}, currentFilter = 'all', currentGuide = null;
+var evalMode = false;
 var EVALUATED = [];
-var currentFilter = 'all';
-var currentSort = 'score';
+var MB_LOADED = false;
 
-// ── Login navigation ───────────────────────────────────────────────────────
-document.querySelector('a.nav-link').addEventListener('click', function(e){
-  if(sessionStorage.getItem('jm_auth_ok')==='1') return; // let it navigate normally
-});
+// ─── Load data ────────────────────────────────────────────────────────────────
+fetch('guides.json?v='+Date.now()).then(function(r){return r.json();}).then(function(d){
+  GUIDES=d; render();
+  document.getElementById('countBadge').textContent=d.length+' guías';
+}).catch(function(){document.getElementById('grid').innerHTML='<div class="loading">Error cargando guías</div>';});
 
-// ── Load guides.json ───────────────────────────────────────────────────────
-fetch('guides.json?v=' + Date.now())
-  .then(function(r){ return r.json(); })
-  .then(function(data){ GUIDES = data; })
-  .catch(function(){ console.warn('No se pudo cargar guides.json'); });
+fetch('sap_data.json?v='+Date.now()).then(function(r){return r.json();}).then(function(d){SAP=d;}).catch(function(){});
 
-// ── File Upload ────────────────────────────────────────────────────────────
-var dropZone = document.getElementById('dropZone');
-var fileInput = document.getElementById('fileInput');
-
-dropZone.addEventListener('dragover', function(e){ e.preventDefault(); dropZone.classList.add('drag-over'); });
-dropZone.addEventListener('dragleave', function(){ dropZone.classList.remove('drag-over'); });
-dropZone.addEventListener('drop', function(e){
-  e.preventDefault(); dropZone.classList.remove('drag-over');
-  var f = e.dataTransfer.files[0];
-  if(f) handleFile(f);
-});
-fileInput.addEventListener('change', function(){
-  if(this.files[0]) handleFile(this.files[0]);
-});
-
-function handleFile(file) {
-  document.getElementById('upload-section').style.display = 'none';
-  document.getElementById('proc-section').style.display = 'block';
-  setProc('Leyendo archivo Excel…', 10);
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    setProc('Procesando market basket…', 30);
-    setTimeout(function(){
-      try {
-        var result = parseMarketBasket(e.target.result);
-        setProc('Cruzando con guías…', 80);
-        setTimeout(function(){
-          EVALUATED = evaluateGuides(GUIDES, result.mbData, result.nameToCode);
-          setProc('Listo', 100);
-          setTimeout(function(){
-            document.getElementById('proc-section').style.display = 'none';
-            document.getElementById('results-section').style.display = 'block';
-            renderStats();
-            renderGrid();
-          }, 300);
-        }, 100);
-      } catch(err) {
-        alert('Error procesando el archivo: ' + err.message);
-        document.getElementById('proc-section').style.display = 'none';
-        document.getElementById('upload-section').style.display = 'flex';
-      }
-    }, 100);
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function setProc(txt, pct) {
-  document.getElementById('proc-text').textContent = txt;
-  document.getElementById('proc-fill').style.width = pct + '%';
-}
-
-// ── Parse Market Basket ────────────────────────────────────────────────────
-function parseMarketBasket(arrayBuffer) {
-  var wb = XLSX.read(new Uint8Array(arrayBuffer), {type: 'array'});
-  var ws = wb.Sheets[wb.SheetNames[0]];
-
-  var colNames = {};   // col_idx -> product name (from row 0)
-  var rowCode  = {};   // row_idx -> product code (from col C = idx 2)
-  var rowName  = {};   // row_idx -> product name (from col A = idx 0)
-  var rowIsAgg = {};   // row_idx -> bool (col B = idx 1, value='*')
-
-  // Pass 1: build mappings from all existing cells
-  for (var addr in ws) {
-    if (addr[0] === '!') continue;
-    var pos = XLSX.utils.decode_cell(addr);
-    var r = pos.r, c = pos.c;
-    var val = ws[addr].v;
-    if (val === undefined || val === null || val === '') continue;
-
-    if (r === 0 && c >= 3) {
-      // Column headers (product names)
-      colNames[c] = String(val);
-    } else if (r >= 1) {
-      if (c === 0) rowName[r] = String(val);
-      else if (c === 1) rowIsAgg[r] = (String(val) === '*');
-      else if (c === 2) rowCode[r] = String(val);
-    }
+// ─── Tab toggle ───────────────────────────────────────────────────────────────
+function toggleEval(btn) {
+  evalMode = !evalMode;
+  btn.classList.toggle('active', evalMode);
+  document.getElementById('guides-view').style.display = evalMode ? 'none' : 'block';
+  document.getElementById('eval-section').style.display = evalMode ? 'block' : 'none';
+  document.getElementById('htitle').textContent = evalMode ? 'Guías de Exhibición — Evaluación' : 'Guías de Exhibición';
+  document.getElementById('bulk-btns').style.display = evalMode ? 'none' : 'flex';
+  document.getElementById('sw-search').style.display = evalMode ? 'none' : 'block';
+  document.getElementById('filter-btns').style.display = evalMode ? 'none' : 'flex';
+  document.getElementById('countBadge').textContent = evalMode
+    ? (EVALUATED.length ? EVALUATED.length+' guías evaluadas' : 'Sube el archivo')
+    : GUIDES.length+' guías';
+  if(evalMode && EVALUATED.length) {
+    document.getElementById('eval-upload').style.display='none';
+    document.getElementById('eval-results').style.display='block';
   }
-
-  // Pass 2: accumulate co-purchase data
-  var mbData = {};  // code -> {name, co: {productName: count}}
-  for (var addr2 in ws) {
-    if (addr2[0] === '!') continue;
-    var pos2 = XLSX.utils.decode_cell(addr2);
-    var r2 = pos2.r, c2 = pos2.c;
-    if (r2 === 0 || c2 <= 3) continue; // skip header + first cols + "Total general" col
-    var val2 = ws[addr2].v;
-    if (typeof val2 !== 'number' || val2 <= 0) continue;
-    var code = rowCode[r2];
-    if (!code) continue;
-    var prodName = colNames[c2];
-    if (!prodName || prodName === 'Total general') continue;
-    if (!mbData[code]) mbData[code] = {name: '', co: {}};
-    mbData[code].co[prodName] = (mbData[code].co[prodName] || 0) + val2;
-  }
-
-  // Build nameToCode from aggregate rows
-  var nameToCode = {};
-  for (var rr in rowIsAgg) {
-    if (rowIsAgg[rr] && rowCode[rr] && rowName[rr]) {
-      nameToCode[rowName[rr]] = rowCode[rr];
-      if (mbData[rowCode[rr]]) mbData[rowCode[rr]].name = rowName[rr];
-    }
-  }
-
-  return {mbData: mbData, nameToCode: nameToCode};
 }
 
-// ── Evaluate Guides ────────────────────────────────────────────────────────
-function evaluateGuides(guides, mbData, nameToCode) {
-  return guides.map(function(guide) {
-    // Build set of codes in this guide
-    var guideCodes = {};
-    var guideNameToCodes = {};
-    Object.values(guide.pisos).forEach(function(prods) {
-      prods.forEach(function(p) {
-        guideCodes[p.c] = true;
-        guideNameToCodes[p.n] = p.c;
-      });
-    });
-
-    var productStats = [];
-    var totalInternal = 0, totalExternal = 0;
-
-    Object.entries(guide.pisos).forEach(function(pisoEntry) {
-      var piso = pisoEntry[0];
-      var prods = pisoEntry[1];
-      prods.forEach(function(prod) {
-        var code = prod.c;
-        var mb = mbData[code];
-        if (!mb || Object.keys(mb.co).length === 0) {
-          productStats.push({code:code, name:prod.n, piso:piso, internal:0, external:0, total:0, pct:null, topExternal:[], topInternal:[], noData:true});
-          return;
-        }
-        var internal = 0, external = 0;
-        var extProds = [], intProds = [];
-        Object.entries(mb.co).forEach(function(entry) {
-          var colName = entry[0], count = +entry[1];
-          // Resolve code for this column product
-          var colCode = nameToCode[colName] || guideNameToCodes[colName] || null;
-          if (colCode && guideCodes[colCode]) {
-            internal += count;
-            intProds.push({name:colName, code:colCode, count:count});
-          } else {
-            external += count;
-            extProds.push({name:colName, code:colCode||'?', count:count});
-          }
-        });
-        extProds.sort(function(a,b){return b.count-a.count;});
-        intProds.sort(function(a,b){return b.count-a.count;});
-        var tot = internal + external;
-        var pct = tot > 0 ? Math.round(internal / tot * 100) : null;
-        productStats.push({code:code, name:prod.n, piso:piso, internal:internal, external:external, total:tot, pct:pct, topExternal:extProds.slice(0,5), topInternal:intProds.slice(0,5), noData:false});
-        totalInternal += internal;
-        totalExternal += external;
-      });
-    });
-
-    var tot = totalInternal + totalExternal;
-    var cohesion = tot > 0 ? Math.round(totalInternal / tot * 100) : null;
-    return Object.assign({}, guide, {cohesion:cohesion, totalInternal:totalInternal, totalExternal:totalExternal, totalCo:tot, productStats:productStats, hasData:tot>0});
-  });
-}
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-function trafficLight(pct) {
-  if (pct === null) return {icon:'⚫', cls:'gray', label:'Sin datos'};
-  if (pct >= 25)   return {icon:'🟢', cls:'green', label:'Alta cohesión'};
-  if (pct >= 10)   return {icon:'🟡', cls:'yellow', label:'Cohesión media'};
-  return             {icon:'🔴', cls:'red', label:'Baja cohesión'};
-}
-function fmtNum(n){ return n.toLocaleString('es-CO'); }
-
-// ── Stats Bar ──────────────────────────────────────────────────────────────
-function renderStats() {
-  var total = EVALUATED.length;
-  var withData = EVALUATED.filter(function(g){return g.hasData;}).length;
-  var high = EVALUATED.filter(function(g){return g.cohesion !== null && g.cohesion >= 25;}).length;
-  var low  = EVALUATED.filter(function(g){return g.cohesion !== null && g.cohesion < 10;}).length;
-  var avg  = EVALUATED.filter(function(g){return g.cohesion !== null;});
-  var avgPct = avg.length ? Math.round(avg.reduce(function(s,g){return s+g.cohesion;},0)/avg.length) : 0;
-
-  document.getElementById('stats-bar').innerHTML =
-    '<div class="stat-card"><div class="stat-val">' + total + '</div><div class="stat-label">GUÍAS TOTALES</div></div>' +
-    '<div class="stat-card"><div class="stat-val">' + withData + '</div><div class="stat-label">CON DATOS EN MARKET BASKET</div></div>' +
-    '<div class="stat-card"><div class="stat-val green">' + high + '</div><div class="stat-label">🟢 ALTA COHESIÓN (≥25%)</div></div>' +
-    '<div class="stat-card"><div class="stat-val red">' + low + '</div><div class="stat-label">🔴 BAJA COHESIÓN (<10%)</div></div>' +
-    '<div class="stat-card"><div class="stat-val ' + (avgPct>=25?'green':avgPct>=10?'yellow':'red') + '">' + avgPct + '%</div><div class="stat-label">COHESIÓN PROMEDIO</div></div>';
-}
-
-// ── Grid ───────────────────────────────────────────────────────────────────
+// ─── Guides rendering ─────────────────────────────────────────────────────────
 function setFilter(f, btn) {
   currentFilter = f;
-  document.querySelectorAll('.fbtns .fb').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('#filter-btns .fb').forEach(function(b){b.classList.remove('active');});
   if(btn) btn.classList.add('active');
-  renderGrid();
-}
-function setSort(s, btn) {
-  currentSort = s;
-  document.querySelectorAll('#sort-score, #sort-alpha').forEach(function(b){b.classList.remove('active');});
-  if(btn) btn.classList.add('active');
-  renderGrid();
+  render();
 }
 
-function renderGrid() {
-  var q = (document.getElementById('searchInput').value || '').toLowerCase();
-  var items = EVALUATED.filter(function(g) {
-    if (currentFilter !== 'all' && !g.code.startsWith(currentFilter)) return false;
-    if (q) {
-      var hay = (g.code + ' ' + g.name + ' ' + g.productStats.map(function(p){return p.name+' '+p.code;}).join(' ')).toLowerCase();
-      if (hay.indexOf(q) < 0) return false;
+function render() {
+  var q = (document.getElementById('searchInput').value||'').toLowerCase();
+  var items = GUIDES.filter(function(g){
+    if(currentFilter!=='all' && !g.code.startsWith(currentFilter)) return false;
+    if(q){
+      var hay=(g.code+' '+g.name+' '+Object.values(g.pisos).flat().map(function(p){return p.c+' '+p.n;}).join(' ')).toLowerCase();
+      if(hay.indexOf(q)<0) return false;
     }
     return true;
   });
-
-  if (currentSort === 'score') {
-    items.sort(function(a,b){
-      if (a.cohesion === null && b.cohesion === null) return 0;
-      if (a.cohesion === null) return 1;
-      if (b.cohesion === null) return -1;
-      return b.cohesion - a.cohesion;
-    });
-  } else {
-    items.sort(function(a,b){ return a.code.localeCompare(b.code); });
-  }
-
-  document.getElementById('countBadge').textContent = items.length + ' guías';
-  var html = '';
-  items.forEach(function(g) {
-    var tl = trafficLight(g.cohesion);
-    var pctText = g.cohesion !== null ? g.cohesion + '%' : 'Sin datos';
-    var barWidth = g.cohesion !== null ? g.cohesion : 0;
-    var barColor = tl.cls === 'green' ? '#2E7D32' : tl.cls === 'yellow' ? '#F57F17' : tl.cls === 'red' ? '#C8102E' : '#aaa';
-
-    // Top external products for preview
-    var allExt = [];
-    g.productStats.forEach(function(p){ p.topExternal.forEach(function(e){ allExt.push(e); }); });
-    allExt.sort(function(a,b){return b.count-a.count;});
-    var extHtml = '';
-    if (!g.hasData) {
-      extHtml = '<div class="nodata-msg">Sin datos en market basket</div>';
-    } else {
-      allExt.slice(0,3).forEach(function(e){
-        extHtml += '<div class="ext-item"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px">' + e.name + '</span><span>' + fmtNum(e.count) + ' veces</span></div>';
-      });
-    }
-
-    html += '<div class="gcard" onclick="openModal(\'' + g.code + '\')">' +
-      '<div class="gcard-head"><div class="gcode">' + g.code + '</div><div class="gname">' + g.name + '</div><div class="gscore-badge">' + tl.icon + ' ' + pctText + '</div></div>' +
-      '<div class="gcard-body">' +
-      '<div class="cohesion-row"><span class="traffic-light">' + tl.icon + '</span><div><div class="cohesion-pct">' + pctText + '</div><div class="cohesion-label">ventas dentro de la guía · ' + tl.label + '</div></div></div>' +
-      '<div class="mini-bar"><div class="mini-bar-fill" style="width:' + barWidth + '%;background:' + barColor + '"></div></div>' +
-      (g.hasData ? '<div class="ext-title">TOP PRODUCTOS QUE SE VAN POR FUERA</div><div class="ext-list">' + extHtml + '</div>' : extHtml) +
-      '</div></div>';
-  });
-  if (!html) html = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:#aaa">No se encontraron guías</div>';
-  document.getElementById('grid').innerHTML = html;
+  document.getElementById('countBadge').textContent = items.length+' guías';
+  if(!items.length){document.getElementById('grid').innerHTML='<div class="empty">Sin resultados</div>';return;}
+  document.getElementById('grid').innerHTML = items.map(function(g){
+    var pisoKeys=Object.keys(g.pisos).sort();
+    var total=pisoKeys.reduce(function(s,k){return s+g.pisos[k].length;},0);
+    var imgs=pisoKeys.flatMap(function(k){return g.pisos[k];}).slice(0,4).map(function(p){
+      return '<img src="'+p.img+'" loading="lazy" onerror="this.style.opacity=0"/>';
+    }).join('');
+    return '<div class="card" onclick="openModal(\''+g.code+'\')">' +
+      '<div class="ch"><div class="ccode">'+g.code+'</div><div class="cname">'+g.name+'</div></div>' +
+      '<div class="cimg-row">'+imgs+'</div>' +
+      '<div class="cb"><div class="meta">'+
+        pisoKeys.map(function(k){return '<span class="pill">Piso '+k+': '+g.pisos[k].length+'</span>';}).join('')+
+        '<span class="pill">Total: '+total+'</span></div></div>'+
+      '<div class="cf"><button class="dlbtn pdf" onclick="event.stopPropagation();downloadPDF(GUIDES.find(function(x){return x.code===\''+g.code+'\';}))">↓ PDF</button>'+
+      '<button class="dlbtn xl" onclick="event.stopPropagation();downloadXLSX(GUIDES.find(function(x){return x.code===\''+g.code+'\';}))">↓ Excel</button>'+
+      '<button class="dlbtn view">👁 Ver</button></div></div>';
+  }).join('');
 }
 
-// ── Modal ──────────────────────────────────────────────────────────────────
 function openModal(code) {
-  var g = EVALUATED.find(function(x){ return x.code === code; });
-  if (!g) return;
-  var tl = trafficLight(g.cohesion);
+  var g = GUIDES.find(function(x){return x.code===code;});
+  if(!g) return;
+  currentGuide = g;
   document.getElementById('mcode').textContent = g.code;
   document.getElementById('mname').textContent = g.name;
-  document.getElementById('mscore').textContent = tl.icon + ' ' + (g.cohesion !== null ? g.cohesion + '% cohesión' : 'Sin datos');
-
-  var html = '';
-  // Summary
-  if (g.hasData) {
-    html += '<div class="msummary">' +
-      '<div class="mstat"><div class="mstat-val" style="color:var(--green)">' + fmtNum(g.totalInternal) + '</div><div class="mstat-label">CO-VENTAS DENTRO DE LA GUÍA</div></div>' +
-      '<div class="mstat"><div class="mstat-val" style="color:var(--red)">' + fmtNum(g.totalExternal) + '</div><div class="mstat-label">CO-VENTAS FUERA DE LA GUÍA</div></div>' +
-      '<div class="mstat"><div class="mstat-val">' + fmtNum(g.totalCo) + '</div><div class="mstat-label">TOTAL CO-VENTAS ANALIZADAS</div></div>' +
-      '</div>';
-  }
-
-  // Group by piso
-  var pisos = {};
-  g.productStats.forEach(function(p){
-    if (!pisos[p.piso]) pisos[p.piso] = [];
-    pisos[p.piso].push(p);
-  });
-
-  Object.entries(pisos).forEach(function(entry) {
-    var piso = entry[0], prods = entry[1];
-    html += '<div class="piso-title">PISO ' + piso + '</div>';
-    html += '<table><thead><tr><th>Código</th><th>Producto</th><th style="text-align:center">% Interno</th><th>Top co-ventas externas</th></tr></thead><tbody>';
-    prods.forEach(function(p) {
-      var tl2 = trafficLight(p.pct);
-      var pctHtml = p.noData
-        ? '<span class="pct-cell gray">—</span>'
-        : '<span class="pct-cell ' + tl2.cls + '">' + (p.pct !== null ? p.pct + '%' : '—') + '</span>';
-
-      var extHtml2 = '';
-      if (p.noData) {
-        extHtml2 = '<span style="color:#aaa;font-size:11px">Sin datos</span>';
-      } else {
-        if (p.topExternal.length === 0) {
-          extHtml2 = '<span style="color:var(--green);font-size:11px">✓ Vende 100% dentro de la guía</span>';
-        } else {
-          p.topExternal.forEach(function(e){
-            extHtml2 += '<div class="ext-mini">• ' + e.name + (e.code !== '?' ? ' <span style="color:#ccc">(' + e.code + ')</span>' : '') + ' — <strong>' + fmtNum(e.count) + '</strong> veces</div>';
-          });
-        }
-      }
-
-      var intHtml = '';
-      if (!p.noData && p.topInternal.length > 0) {
-        intHtml = '<div class="int-mini" style="margin-top:4px;color:var(--green)">Interno: ';
-        intHtml += p.topInternal.slice(0,2).map(function(i){return i.name + ' (' + fmtNum(i.count) + ')';}).join(', ');
-        intHtml += '</div>';
-      }
-
-      html += '<tr>' +
-        '<td style="font-size:11px;white-space:nowrap">' + p.code + '</td>' +
-        '<td><strong>' + p.name + '</strong>' + intHtml + '</td>' +
-        '<td style="text-align:center">' + pctHtml + '</td>' +
-        '<td>' + extHtml2 + '</td>' +
-        '</tr>';
-    });
-    html += '</tbody></table>';
-  });
-
-  document.getElementById('mbody').innerHTML = html;
+  var pisoKeys = Object.keys(g.pisos).sort();
+  document.getElementById('mbody').innerHTML = pisoKeys.map(function(piso){
+    var prods = g.pisos[piso];
+    return '<div class="piso-title">PISO '+piso+'</div>' +
+      '<table><thead><tr><th></th><th>Código</th><th>Producto</th><th>Disp.</th><th>OC</th></tr></thead>' +
+      '<tbody>'+prods.map(function(p){
+        var s=SAP[p.c]||{};
+        return '<tr><td><img class="prod-img" src="'+p.img+'" onerror="this.style.opacity=0"/></td>' +
+          '<td>'+p.c+'</td><td>'+p.n+'</td>' +
+          '<td>'+(s.s!==undefined?s.s:p.q)+'</td>' +
+          '<td>'+(s.oc!==undefined?s.oc:p.o)+'</td></tr>';
+      }).join('')+'</tbody></table>';
+  }).join('');
   document.getElementById('overlay').classList.add('open');
 }
+function closeModal(e){if(!e||e.target===document.getElementById('overlay'))document.getElementById('overlay').classList.remove('open');}
 
-function closeModal(e) {
-  if (!e || e.target === document.getElementById('overlay')) {
-    document.getElementById('overlay').classList.remove('open');
-  }
+// ─── Downloads (simplified) ───────────────────────────────────────────────────
+function downloadXLSX(g) {
+  if(!g) return;
+  var wb=XLSX.utils.book_new();
+  var rows=[['Piso','Código','Producto','Disponible','OC']];
+  Object.keys(g.pisos).sort().forEach(function(piso){
+    g.pisos[piso].forEach(function(p){var s=SAP[p.c]||{};rows.push([piso,p.c,p.n,s.s!==undefined?s.s:p.q,s.oc!==undefined?s.oc:p.o]);});
+  });
+  var ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:6},{wch:14},{wch:50},{wch:12},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,ws,g.code.substring(0,31));
+  XLSX.writeFile(wb,'Guia_'+g.code+'.xlsx');
 }
-document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeModal(); });
+function downloadPDF(g){if(g)alert('PDF: usa el botón desde la vista de guías principal.');}
+function downloadAllPDF(){alert('Función disponible en la página principal de guías.');}
+function downloadAllXLSX(){
+  var wb=XLSX.utils.book_new();
+  var sum=[['Código','Nombre','Pisos','Total Productos']];
+  GUIDES.forEach(function(g){sum.push([g.code,g.name,Object.keys(g.pisos).join(', '),Object.values(g.pisos).reduce(function(s,a){return s+a.length;},0)]);});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sum),'Resumen');
+  GUIDES.forEach(function(g){
+    var rows=[['Piso','Código','Producto','Disponible','OC']];
+    Object.keys(g.pisos).sort().forEach(function(piso){g.pisos[piso].forEach(function(p){var s=SAP[p.c]||{};rows.push([piso,p.c,p.n,s.s!==undefined?s.s:p.q,s.oc!==undefined?s.oc:p.o]);});});
+    var ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:6},{wch:14},{wch:50},{wch:12},{wch:10}];
+    XLSX.utils.book_append_sheet(wb,ws,g.code.substring(0,31));
+  });
+  XLSX.writeFile(wb,'Guias_Exhibicion_Jamar_Completo.xlsx');
+}
+
+// ─── Market Basket Upload ─────────────────────────────────────────────────────
+var dz=document.getElementById('dropZone'), fi=document.getElementById('fileInput');
+dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('drag-over');});
+dz.addEventListener('dragleave',function(){dz.classList.remove('drag-over');});
+dz.addEventListener('drop',function(e){e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);});
+fi.addEventListener('change',function(){if(this.files[0])handleFile(this.files[0]);});
+
+function handleFile(file) {
+  document.getElementById('eval-upload').style.display='none';
+  document.getElementById('eval-proc').style.display='block';
+  setProc('Leyendo archivo Excel…',15);
+  var reader=new FileReader();
+  reader.onload=function(e){
+    setProc('Procesando market basket…',40);
+    setTimeout(function(){
+      try{
+        var result=parseMarketBasket(e.target.result);
+        setProc('Cruzando con guías…',80);
+        setTimeout(function(){
+          EVALUATED=evaluateGuides(GUIDES,result.mbData,result.nameToCode);
+          MB_LOADED=true;
+          setProc('Listo',100);
+          setTimeout(function(){
+            document.getElementById('eval-proc').style.display='none';
+            document.getElementById('eval-results').style.display='block';
+            document.getElementById('countBadge').textContent=EVALUATED.length+' guías evaluadas';
+            renderStats(); renderEvalGrid();
+          },300);
+        },100);
+      }catch(err){
+        alert('Error: '+err.message);
+        document.getElementById('eval-proc').style.display='none';
+        document.getElementById('eval-upload').style.display='flex';
+      }
+    },100);
+  };
+  reader.readAsArrayBuffer(file);
+}
+function setProc(txt,pct){document.getElementById('proc-text').textContent=txt;document.getElementById('proc-fill').style.width=pct+'%';}
+
+// ─── Parse Market Basket ──────────────────────────────────────────────────────
+function parseMarketBasket(buf) {
+  var wb=XLSX.read(new Uint8Array(buf),{type:'array'});
+  var ws=wb.Sheets[wb.SheetNames[0]];
+  var colNames={}, rowCode={}, rowName={}, rowIsAgg={};
+  for(var addr in ws){
+    if(addr[0]==='!') continue;
+    var pos=XLSX.utils.decode_cell(addr), r=pos.r, c=pos.c, val=ws[addr].v;
+    if(val===undefined||val===null||val==='') continue;
+    if(r===0&&c>=3){colNames[c]=String(val);}
+    else if(r>=1){
+      if(c===0) rowName[r]=String(val);
+      else if(c===1) rowIsAgg[r]=(String(val)==='*');
+      else if(c===2) rowCode[r]=String(val);
+    }
+  }
+  var mbData={};
+  for(var addr2 in ws){
+    if(addr2[0]==='!') continue;
+    var p2=XLSX.utils.decode_cell(addr2), r2=p2.r, c2=p2.c;
+    if(r2===0||c2<=3) continue;
+    var v2=ws[addr2].v;
+    if(typeof v2!=='number'||v2<=0) continue;
+    var code=rowCode[r2]; if(!code) continue;
+    var pn=colNames[c2]; if(!pn||pn==='Total general') continue;
+    if(!mbData[code]) mbData[code]={name:'',co:{}};
+    mbData[code].co[pn]=(mbData[code].co[pn]||0)+v2;
+  }
+  var n2c={};
+  for(var rr in rowIsAgg){
+    if(rowIsAgg[rr]&&rowCode[rr]&&rowName[rr]){
+      n2c[rowName[rr]]=rowCode[rr];
+      if(mbData[rowCode[rr]]) mbData[rowCode[rr]].name=rowName[rr];
+    }
+  }
+  return {mbData:mbData, nameToCode:n2c};
+}
+
+// ─── Evaluate ─────────────────────────────────────────────────────────────────
+function evaluateGuides(guides, mbData, n2c) {
+  return guides.map(function(guide){
+    var gc={}, gn2c={};
+    Object.values(guide.pisos).forEach(function(ps){ps.forEach(function(p){gc[p.c]=true;gn2c[p.n]=p.c;});});
+    var stats=[]; var ti=0, te=0;
+    Object.entries(guide.pisos).forEach(function(pe){
+      var piso=pe[0], prods=pe[1];
+      prods.forEach(function(prod){
+        var mb=mbData[prod.c];
+        if(!mb||!Object.keys(mb.co).length){stats.push({code:prod.c,name:prod.n,piso:piso,internal:0,external:0,total:0,pct:null,topExternal:[],topInternal:[],noData:true});return;}
+        var intl=0,extl=0,ep=[],ip=[];
+        Object.entries(mb.co).forEach(function(en){
+          var cn=en[0],cnt=+en[1];
+          var cc=n2c[cn]||gn2c[cn]||null;
+          if(cc&&gc[cc]){intl+=cnt;ip.push({name:cn,code:cc,count:cnt});}
+          else{extl+=cnt;ep.push({name:cn,code:cc||'?',count:cnt});}
+        });
+        ep.sort(function(a,b){return b.count-a.count;});
+        ip.sort(function(a,b){return b.count-a.count;});
+        var tot=intl+extl, pct=tot>0?Math.round(intl/tot*100):null;
+        stats.push({code:prod.c,name:prod.n,piso:piso,internal:intl,external:extl,total:tot,pct:pct,topExternal:ep.slice(0,5),topInternal:ip.slice(0,3),noData:false});
+        ti+=intl; te+=extl;
+      });
+    });
+    var tot=ti+te, coh=tot>0?Math.round(ti/tot*100):null;
+    return Object.assign({},guide,{cohesion:coh,totalInternal:ti,totalExternal:te,totalCo:tot,productStats:stats,hasData:tot>0});
+  });
+}
+
+function tl(pct){
+  if(pct===null) return {icon:'⚫',cls:'gray',label:'Sin datos'};
+  if(pct>=25) return {icon:'🟢',cls:'green',label:'Alta cohesión'};
+  if(pct>=10) return {icon:'🟡',cls:'yellow',label:'Cohesión media'};
+  return {icon:'🔴',cls:'red',label:'Baja cohesión'};
+}
+function fn(n){return n.toLocaleString('es-CO');}
+
+function renderStats(){
+  var total=EVALUATED.length;
+  var wd=EVALUATED.filter(function(g){return g.hasData;}).length;
+  var hi=EVALUATED.filter(function(g){return g.cohesion!==null&&g.cohesion>=25;}).length;
+  var lo=EVALUATED.filter(function(g){return g.cohesion!==null&&g.cohesion<10;}).length;
+  var av=EVALUATED.filter(function(g){return g.cohesion!==null;});
+  var ap=av.length?Math.round(av.reduce(function(s,g){return s+g.cohesion;},0)/av.length):0;
+  document.getElementById('stats-bar').innerHTML=
+    '<div class="stat-card"><div class="stat-val">'+total+'</div><div class="stat-label">GUÍAS TOTALES</div></div>'+
+    '<div class="stat-card"><div class="stat-val">'+wd+'</div><div class="stat-label">CON DATOS</div></div>'+
+    '<div class="stat-card"><div class="stat-val green">'+hi+'</div><div class="stat-label">🟢 ALTA COHESIÓN</div></div>'+
+    '<div class="stat-card"><div class="stat-val red">'+lo+'</div><div class="stat-label">🔴 BAJA COHESIÓN</div></div>'+
+    '<div class="stat-card"><div class="stat-val '+(ap>=25?'green':ap>=10?'yellow':'red')+'">'+ap+'%</div><div class="stat-label">COHESIÓN PROMEDIO</div></div>';
+}
+
+function renderEvalGrid(){
+  var items=EVALUATED.slice().sort(function(a,b){
+    if(a.cohesion===null&&b.cohesion===null) return 0;
+    if(a.cohesion===null) return 1; if(b.cohesion===null) return -1;
+    return b.cohesion-a.cohesion;
+  });
+  var bc={green:'#2E7D32',yellow:'#F57F17',red:'#C8102E',gray:'#aaa'};
+  document.getElementById('eval-grid').innerHTML=items.map(function(g){
+    var t=tl(g.cohesion), bw=g.cohesion||0, pt=g.cohesion!==null?g.cohesion+'%':'Sin datos';
+    var allExt=[];
+    g.productStats.forEach(function(p){p.topExternal.forEach(function(e){allExt.push(e);});});
+    allExt.sort(function(a,b){return b.count-a.count;});
+    var extH=g.hasData
+      ? allExt.slice(0,3).map(function(e){return '<div class="ext-item"><span class="ext-name">'+e.name+'</span><span>'+fn(e.count)+'</span></div>';}).join('')
+      : '<div class="nodata-msg">Sin datos en market basket</div>';
+    return '<div class="gcard" onclick="openEModal(\''+g.code+'\')">' +
+      '<div class="gcard-head"><div class="gcode">'+g.code+'</div><div class="gname">'+g.name+'</div><div class="gscore-badge">'+t.icon+' '+pt+'</div></div>' +
+      '<div class="gcard-body">' +
+      '<div class="cohesion-row"><span style="font-size:18px">'+t.icon+'</span><div><div class="cohesion-pct">'+pt+'</div><div class="cohesion-label">ventas dentro de la guía · '+t.label+'</div></div></div>' +
+      '<div class="mini-bar"><div class="mini-bar-fill" style="width:'+bw+'%;background:'+bc[t.cls]+'"></div></div>' +
+      (g.hasData?'<div class="ext-title">TOP PRODUCTOS QUE SE VAN POR FUERA</div>':'')+
+      '<div>'+extH+'</div></div></div>';
+  }).join('');
+}
+
+function openEModal(code){
+  var g=EVALUATED.find(function(x){return x.code===code;});if(!g) return;
+  var t=tl(g.cohesion);
+  document.getElementById('ecode').textContent=g.code;
+  document.getElementById('ename').textContent=g.name;
+  document.getElementById('escore').textContent=t.icon+' '+(g.cohesion!==null?g.cohesion+'% cohesión':'Sin datos');
+  var html='';
+  if(g.hasData) html+='<div class="msummary">'+
+    '<div class="mstat"><div class="mstat-val" style="color:var(--green)">'+fn(g.totalInternal)+'</div><div class="mstat-label">CO-VENTAS DENTRO DE LA GUÍA</div></div>'+
+    '<div class="mstat"><div class="mstat-val" style="color:var(--red)">'+fn(g.totalExternal)+'</div><div class="mstat-label">CO-VENTAS FUERA DE LA GUÍA</div></div>'+
+    '<div class="mstat"><div class="mstat-val">'+fn(g.totalCo)+'</div><div class="mstat-label">TOTAL CO-VENTAS</div></div></div>';
+  var pisos={};
+  g.productStats.forEach(function(p){if(!pisos[p.piso])pisos[p.piso]=[];pisos[p.piso].push(p);});
+  Object.entries(pisos).forEach(function(pe){
+    var piso=pe[0],prods=pe[1];
+    html+='<div class="eval-piso-title">PISO '+piso+'</div>';
+    html+='<table class="etable"><thead><tr><th>Código</th><th>Producto</th><th style="text-align:center">% Interno</th><th>Top co-ventas externas</th></tr></thead><tbody>';
+    prods.forEach(function(p){
+      var t2=tl(p.pct);
+      var pctH=p.noData?'<span class="pct-cell gray">—</span>':'<span class="pct-cell '+t2.cls+'">'+(p.pct!==null?p.pct+'%':'—')+'</span>';
+      var extH2='';
+      if(p.noData) extH2='<span style="color:#aaa;font-size:11px">Sin datos</span>';
+      else if(!p.topExternal.length) extH2='<span style="color:var(--green);font-size:11px">✓ Vende 100% dentro de la guía</span>';
+      else p.topExternal.forEach(function(e){extH2+='<div class="ext-mini">• '+e.name+(e.code!=='?'?' <span style="color:#ccc">('+e.code+')</span>':'')+' — <strong>'+fn(e.count)+'</strong> veces</div>';});
+      var intH='';
+      if(!p.noData&&p.topInternal.length) intH='<div class="int-mini">Interno: '+p.topInternal.slice(0,2).map(function(i){return i.name+' ('+fn(i.count)+')';}).join(', ')+'</div>';
+      html+='<tr><td style="font-size:11px;white-space:nowrap">'+p.code+'</td><td><strong>'+p.name+'</strong>'+intH+'</td><td style="text-align:center">'+pctH+'</td><td>'+extH2+'</td></tr>';
+    });
+    html+='</tbody></table>';
+  });
+  document.getElementById('ebody').innerHTML=html;
+  document.getElementById('eoverlay').classList.add('open');
+}
+function closeEModal(e){if(!e||e.target===document.getElementById('eoverlay'))document.getElementById('eoverlay').classList.remove('open');}
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeModal();closeEModal();}});
 </script>
 </body>
 </html>
