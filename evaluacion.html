@@ -346,6 +346,8 @@ fetch('guides.json?v='+Date.now())
       });
     });
     render();
+    // Guides ready — try restoring saved market basket
+    tryRestoreFromStorage();
   })
   .catch(function(err){
     document.getElementById('grid').innerHTML='<div class="empty"><p>Error cargando datos: '+err.message+'</p></div>';
@@ -400,9 +402,10 @@ function toggleEval(btn) {
     if (EVALUATED.length) {
       document.getElementById('eval-upload').style.display='none';
       document.getElementById('eval-results').style.display='block';
-    } else {
-      tryRestoreFromStorage();
+      if (SAVED_MB_META) showUpdateBar(SAVED_MB_META.ts, SAVED_MB_META.fileName);
+      document.getElementById('countBadge').textContent=EVALUATED.length+' guías evaluadas';
     }
+    // tryRestoreFromStorage already runs after guides load; nothing extra needed here
   }
 }
 
@@ -724,22 +727,16 @@ function showLastUploadInfo(ts, fileName) {
 
 function applyMBResult(result, ts, fileName) {
   EVALUATED = evaluateGuides(GUIDES, result.mbData, result.nameToCode);
+  SAVED_MB_META = {ts: ts, fileName: fileName};
   document.getElementById('eval-proc').style.display='none';
   document.getElementById('eval-upload').style.display='none';
   document.getElementById('eval-results').style.display='block';
   document.getElementById('countBadge').textContent=EVALUATED.length+' guías evaluadas';
-  // Show update option below results
-  var infoBar = document.getElementById('eval-update-bar');
-  if (!infoBar) {
-    infoBar = document.createElement('div');
-    infoBar.id = 'eval-update-bar';
-    infoBar.style.cssText='padding:10px 24px;font-size:12px;color:#7B1FA2;background:#F3E5F5;display:flex;align-items:center;gap:12px;flex-wrap:wrap';
-    document.getElementById('eval-results').before(infoBar);
-  }
-  infoBar.innerHTML='&#128197; Datos del: <strong>'+timeSince(ts)+'</strong>'+(fileName?' &middot; '+fileName:'')+
-    ' &nbsp;<button onclick="document.getElementById(\'eval-results\').style.display=\'none\';document.getElementById(\'eval-update-bar\').style.display=\'none\';document.getElementById(\'eval-upload\').style.display=\'flex\'" style="background:#7B1FA2;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;font-weight:700">Actualizar datos</button>';
+  showUpdateBar(ts, fileName);
   renderStats(); renderEvalGrid();
 }
+
+var SAVED_MB_META = null; // {ts, fileName} from last restore
 
 function tryRestoreFromStorage() {
   try {
@@ -747,19 +744,34 @@ function tryRestoreFromStorage() {
     if (!raw) return false;
     var saved = JSON.parse(raw);
     if (!saved.mbData || !saved.nameToCode || !saved.ts) return false;
-    // Restore
-    setTimeout(function(){
-      if (GUIDES.length) {
-        applyMBResult(saved, saved.ts, saved.fileName||'');
-      } else {
-        // Guides not loaded yet — retry shortly
-        setTimeout(function(){
-          if (GUIDES.length) applyMBResult(saved, saved.ts, saved.fileName||'');
-        }, 1500);
-      }
-    }, 200);
+    if (!GUIDES.length) return false; // guides not ready
+    // Run evaluation silently
+    EVALUATED = evaluateGuides(GUIDES, saved.mbData, saved.nameToCode);
+    SAVED_MB_META = {ts: saved.ts, fileName: saved.fileName||''};
+    // If eval tab is already open, refresh view
+    if (evalMode) {
+      document.getElementById('eval-upload').style.display='none';
+      document.getElementById('eval-results').style.display='block';
+      document.getElementById('countBadge').textContent=EVALUATED.length+' guías evaluadas';
+      showUpdateBar(saved.ts, saved.fileName||'');
+      renderStats(); renderEvalGrid();
+    }
     return true;
-  } catch(e) { return false; }
+  } catch(e) { console.warn('Restore error:', e); return false; }
+}
+
+function showUpdateBar(ts, fileName) {
+  var infoBar = document.getElementById('eval-update-bar');
+  if (!infoBar) {
+    infoBar = document.createElement('div');
+    infoBar.id = 'eval-update-bar';
+    infoBar.style.cssText='padding:10px 24px;font-size:12px;color:#7B1FA2;background:#F3E5F5;display:flex;align-items:center;gap:12px;flex-wrap:wrap';
+    var resultsEl = document.getElementById('eval-results');
+    resultsEl.parentNode.insertBefore(infoBar, resultsEl);
+  }
+  infoBar.style.display='flex';
+  infoBar.innerHTML='&#128197; Datos del: <strong>'+timeSince(ts)+'</strong>'+(fileName?' &middot; '+fileName:'')+
+    ' &nbsp;<button onclick="document.getElementById(\'eval-results\').style.display=\'none\';document.getElementById(\'eval-update-bar\').style.display=\'none\';document.getElementById(\'eval-upload\').style.display=\'flex\'" style="background:#7B1FA2;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;font-weight:700">Actualizar datos</button>';
 }
 
 function handleFile(file) {
