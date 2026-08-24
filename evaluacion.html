@@ -964,10 +964,15 @@ function openEModal(code){
   Object.entries(pisos).forEach(function(pe){
     var piso=pe[0], prods=pe[1];
     html+='<div class="eval-piso-title">PISO '+piso+'</div>';
-    html+='<table class="etable"><thead><tr><th>Código</th><th>Producto</th><th style="text-align:center">Estado</th><th style="text-align:center">% Interno</th><th>Top co-ventas externas</th></tr></thead><tbody>';
+    html+='<table class="etable"><thead><tr><th style="width:44px"></th><th>Código</th><th>Producto</th><th style="text-align:center">Estado</th><th style="text-align:center">% Interno</th><th>Top co-ventas externas</th></tr></thead><tbody>';
     prods.forEach(function(p){
       var t2=tl(p.pct);
       var pctH=p.noData?'<span class="pct-cell gray">—</span>':'<span class="pct-cell '+t2.cls+'">'+(p.pct!==null?p.pct+'%':'—')+'</span>';
+      // Guide product image (from CODE_IMG — always available for guide products)
+      var gImg=CODE_IMG[p.code]||null;
+      var gImgTag=gImg
+        ?'<img class="prod-img" src="'+gImg+'" style="cursor:zoom-in;width:40px;height:40px" onclick="zoomImg(\''+gImg+'\')" onerror="this.style.display=\'none\'"/>'
+        :'<div style="width:40px;height:40px;background:#f5f5f5;border-radius:4px;border:1px solid #eee"></div>';
       var extH2='';
       if(p.noData) extH2='<span style="color:#aaa;font-size:11px">Sin datos en market basket</span>';
       else if(!p.topExternal.length) extH2='<span style="color:#2E7D32;font-size:11px">✓ Vende 100% dentro de la guía</span>';
@@ -993,7 +998,7 @@ function openEModal(code){
       });
       var intH='';
       if(!p.noData&&p.topInternal.length) intH='<div class="int-mini">Interno: '+p.topInternal.slice(0,2).map(function(i){return i.name+' ('+fn(i.count)+')';}).join(', ')+'</div>';
-      html+='<tr><td style="font-size:11px;white-space:nowrap">'+p.code+'</td><td><strong>'+p.name+'</strong>'+intH+'</td><td style="text-align:center">'+statusLabel(p.status)+'</td><td style="text-align:center">'+pctH+'</td><td>'+extH2+'</td></tr>';
+      html+='<tr><td>'+gImgTag+'</td><td style="font-size:11px;white-space:nowrap">'+p.code+'</td><td><strong>'+p.name+'</strong>'+intH+'</td><td style="text-align:center">'+statusLabel(p.status)+'</td><td style="text-align:center">'+pctH+'</td><td>'+extH2+'</td></tr>';
     });
     html+='</tbody></table>';
   });
