@@ -726,7 +726,7 @@ function showLastUploadInfo(ts, fileName) {
 }
 
 function applyMBResult(result, ts, fileName) {
-  EVALUATED = evaluateGuides(GUIDES, result.mbData, result.nameToCode);
+  if (!EVALUATED.length) EVALUATED = evaluateGuides(GUIDES, result.mbData, result.nameToCode);
   SAVED_MB_META = {ts: ts, fileName: fileName};
   document.getElementById('eval-proc').style.display='none';
   document.getElementById('eval-upload').style.display='none';
@@ -743,12 +743,11 @@ function tryRestoreFromStorage() {
     var raw = localStorage.getItem(MB_STORAGE_KEY);
     if (!raw) return false;
     var saved = JSON.parse(raw);
-    if (!saved.mbData || !saved.nameToCode || !saved.ts) return false;
-    if (!GUIDES.length) return false; // guides not ready
-    // Run evaluation silently
-    EVALUATED = evaluateGuides(GUIDES, saved.mbData, saved.nameToCode);
+    if (!saved.evaluated || !saved.ts) return false;
+    // Restore pre-computed results directly
+    EVALUATED = saved.evaluated;
     SAVED_MB_META = {ts: saved.ts, fileName: saved.fileName||''};
-    // If eval tab is already open, refresh view
+    // If eval tab is already open, show results
     if (evalMode) {
       document.getElementById('eval-upload').style.display='none';
       document.getElementById('eval-results').style.display='block';
@@ -786,11 +785,13 @@ function handleFile(file) {
         var result=parseMarketBasket(e.target.result);
         setProc('Cruzando con guías…',80);
         setTimeout(function(){
-          // Save to localStorage
+          // Save EVALUATED results (small) instead of raw mbData (too large)
           try {
-            var toSave={mbData:result.mbData, nameToCode:result.nameToCode, ts:Date.now(), fileName:file.name};
+            var ts2=Date.now();
+            EVALUATED=evaluateGuides(GUIDES,result.mbData,result.nameToCode);
+            var toSave={evaluated:EVALUATED, ts:ts2, fileName:file.name};
             localStorage.setItem(MB_STORAGE_KEY, JSON.stringify(toSave));
-          } catch(se){ console.warn('No se pudo guardar en localStorage:', se); }
+          } catch(se){ console.warn('No se pudo guardar:', se); }
           setProc('Listo',100);
           setTimeout(function(){
             applyMBResult(result, Date.now(), file.name);
