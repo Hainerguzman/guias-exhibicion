@@ -837,13 +837,20 @@ function parseMarketBasket(buf) {
     mbData[code].co[pn]=(mbData[code].co[pn]||0)+v2;
   }
   var n2c={};
+  // Pass 1: aggregate rows (col B='*') — canonical names
   for(var rr in rowIsAgg){
     if(rowIsAgg[rr]&&rowCode[rr]&&rowName[rr]){
-      // index by original AND uppercase+trimmed for case-insensitive matching
-      var normName=rowName[rr].trim().toUpperCase();
       n2c[rowName[rr]]=rowCode[rr];
-      n2c[normName]=rowCode[rr];
+      n2c[rowName[rr].trim().toUpperCase()]=rowCode[rr];
       if(mbData[rowCode[rr]]) mbData[rowCode[rr]].name=rowName[rr];
+    }
+  }
+  // Pass 2: ALL rows with a code — covers products with no aggregate row
+  for(var rr2 in rowCode){
+    if(rowCode[rr2]&&rowName[rr2]){
+      var nm=rowName[rr2], nmU=nm.trim().toUpperCase();
+      if(!n2c[nm])  n2c[nm]=rowCode[rr2];
+      if(!n2c[nmU]) n2c[nmU]=rowCode[rr2];
     }
   }
   return {mbData:mbData, nameToCode:n2c};
