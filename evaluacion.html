@@ -168,6 +168,10 @@ footer{text-align:center;padding:20px;font-size:11px;color:#aaa;border-top:1px s
 .ext-prod-count{font-size:12px;font-weight:700;color:#555;white-space:nowrap}
 /* Card ext items with thumbnail */
 .ext-item-img{width:24px;height:24px;object-fit:contain;border-radius:3px;border:1px solid #eee;background:#fafafa;flex-shrink:0}
+/* Zoom lightbox */
+#img-zoom-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:9000;align-items:center;justify-content:center;cursor:zoom-out}
+#img-zoom-overlay.open{display:flex}
+#img-zoom-overlay img{max-width:88vw;max-height:88vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.5)}
 </style>
 </head>
 <body>
@@ -234,10 +238,11 @@ footer{text-align:center;padding:20px;font-size:11px;color:#aaa;border-top:1px s
   <div class="eval-upload-wrap" id="eval-upload">
     <div class="eval-title">&#128202; Evaluación de Cohesión por Guía</div>
     <p style="font-size:13px;color:#666;text-align:center;max-width:460px">Sube el reporte Market Basket de Tableau para ver qué tan bien se venden juntos los productos de cada guía.</p>
+    <div id="last-upload-info" style="display:none;font-size:12px;color:#7B1FA2;background:#F3E5F5;border-radius:8px;padding:8px 16px;text-align:center"></div>
     <div class="drop-zone" id="dropZone">
       <input type="file" id="fileInput" accept=".xlsx,.xls"/>
       <div class="drop-icon">&#128194;</div>
-      <div class="drop-text"><strong>Arrastra el archivo aquí</strong><br>o haz clic para buscarlo<br><span style="font-size:11px;color:#aaa">Excel (.xlsx) — Market Basket Productos</span></div>
+      <div class="drop-text" id="drop-label"><strong>Arrastra el archivo aquí</strong><br>o haz clic para buscarlo<br><span style="font-size:11px;color:#aaa">Excel (.xlsx) — Market Basket Productos</span></div>
     </div>
   </div>
   <div id="eval-proc">
@@ -282,11 +287,18 @@ footer{text-align:center;padding:20px;font-size:11px;color:#aaa;border-top:1px s
 
 <footer>Jamar &nbsp;·&nbsp; Guías de Exhibición &nbsp;·&nbsp; <span id="year"></span></footer>
 
+<!-- ZOOM LIGHTBOX -->
+<div id="img-zoom-overlay" onclick="this.classList.remove('open')">
+  <img id="img-zoom-src" src="" alt=""/>
+</div>
+
 <script>
 // ─── State ─────────────────────────────────────────────────────────────────
 var GUIDES = [], SAP = {}, SAPD = {}, activeFilter = 'all', currentGuide = null;
 var evalMode = false, EVALUATED = [];
-var CODE_IMG = {}; // code → image URL built from all guide products
+var CODE_IMG  = {}; // code  → image URL
+var NAME_IMG  = {}; // name  → image URL  (fallback when code unknown)
+var NAME_CODE = {}; // name  → code       (fallback resolver)
 var IMG_PENDING = {}; // codes currently being fetched
 var IMG_FAILED  = {}; // codes that returned no image
 
@@ -323,10 +335,14 @@ fetch('guides.json?v='+Date.now())
   .then(function(r){return r.json();})
   .then(function(d){
     GUIDES=d;
-    // Build code→image map from ALL guide products
+    // Build code→image AND name→image/code maps from ALL guide products
     d.forEach(function(g){
       Object.values(g.pisos).forEach(function(prods){
-        prods.forEach(function(p){if(p.img && p.c) CODE_IMG[p.c]=p.img;});
+        prods.forEach(function(p){
+          if(p.c && p.img) CODE_IMG[p.c]=p.img;
+          if(p.n && p.img) NAME_IMG[p.n.toUpperCase()]=p.img;
+          if(p.n && p.c)   NAME_CODE[p.n.toUpperCase()]=p.c;
+        });
       });
     });
     render();
@@ -380,9 +396,13 @@ function toggleEval(btn) {
   document.getElementById('countBadge').textContent = evalMode
     ? (EVALUATED.length ? EVALUATED.length+' guías evaluadas' : 'Sube el archivo')
     : GUIDES.length+' guías';
-  if (evalMode && EVALUATED.length) {
-    document.getElementById('eval-upload').style.display='none';
-    document.getElementById('eval-results').style.display='block';
+  if (evalMode) {
+    if (EVALUATED.length) {
+      document.getElementById('eval-upload').style.display='none';
+      document.getElementById('eval-results').style.display='block';
+    } else {
+      tryRestoreFromStorage();
+    }
   }
 }
 
@@ -683,6 +703,65 @@ dz.addEventListener('dragleave',function(){dz.classList.remove('drag-over');});
 dz.addEventListener('drop',function(e){e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);});
 fi.addEventListener('change',function(){if(this.files[0])handleFile(this.files[0]);});
 
+var MB_STORAGE_KEY = 'jm_mb_v2';
+
+function timeSince(ts) {
+  var mins = Math.floor((Date.now()-ts)/60000);
+  if (mins < 1)   return 'hace menos de 1 minuto';
+  if (mins < 60)  return 'hace '+mins+' minuto'+(mins>1?'s':'');
+  var hrs = Math.floor(mins/60);
+  if (hrs < 24)   return 'hace '+hrs+' hora'+(hrs>1?'s':'');
+  var days = Math.floor(hrs/24);
+  return 'hace '+days+' día'+(days>1?'s':'');
+}
+
+function showLastUploadInfo(ts, fileName) {
+  var el = document.getElementById('last-upload-info');
+  el.style.display = 'block';
+  el.innerHTML = '&#128197; Último cargue: <strong>'+timeSince(ts)+'</strong>'+(fileName?' · '+fileName:'')+'<br><span style="font-size:11px;color:#999">El archivo a continuación sirve para actualizar el análisis</span>';
+  document.getElementById('drop-label').innerHTML = '<strong>&#8593; Actualizar market basket</strong><br>o haz clic para buscar uno nuevo<br><span style="font-size:11px;color:#aaa">Excel (.xlsx) — Market Basket Productos</span>';
+}
+
+function applyMBResult(result, ts, fileName) {
+  EVALUATED = evaluateGuides(GUIDES, result.mbData, result.nameToCode);
+  document.getElementById('eval-proc').style.display='none';
+  document.getElementById('eval-upload').style.display='none';
+  document.getElementById('eval-results').style.display='block';
+  document.getElementById('countBadge').textContent=EVALUATED.length+' guías evaluadas';
+  // Show update option below results
+  var infoBar = document.getElementById('eval-update-bar');
+  if (!infoBar) {
+    infoBar = document.createElement('div');
+    infoBar.id = 'eval-update-bar';
+    infoBar.style.cssText='padding:10px 24px;font-size:12px;color:#7B1FA2;background:#F3E5F5;display:flex;align-items:center;gap:12px;flex-wrap:wrap';
+    document.getElementById('eval-results').before(infoBar);
+  }
+  infoBar.innerHTML='&#128197; Datos del: <strong>'+timeSince(ts)+'</strong>'+(fileName?' &middot; '+fileName:'')+
+    ' &nbsp;<button onclick="document.getElementById(\'eval-results\').style.display=\'none\';document.getElementById(\'eval-update-bar\').style.display=\'none\';document.getElementById(\'eval-upload\').style.display=\'flex\'" style="background:#7B1FA2;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;font-weight:700">Actualizar datos</button>';
+  renderStats(); renderEvalGrid();
+}
+
+function tryRestoreFromStorage() {
+  try {
+    var raw = localStorage.getItem(MB_STORAGE_KEY);
+    if (!raw) return false;
+    var saved = JSON.parse(raw);
+    if (!saved.mbData || !saved.nameToCode || !saved.ts) return false;
+    // Restore
+    setTimeout(function(){
+      if (GUIDES.length) {
+        applyMBResult(saved, saved.ts, saved.fileName||'');
+      } else {
+        // Guides not loaded yet — retry shortly
+        setTimeout(function(){
+          if (GUIDES.length) applyMBResult(saved, saved.ts, saved.fileName||'');
+        }, 1500);
+      }
+    }, 200);
+    return true;
+  } catch(e) { return false; }
+}
+
 function handleFile(file) {
   document.getElementById('eval-upload').style.display='none';
   document.getElementById('eval-proc').style.display='block';
@@ -695,13 +774,14 @@ function handleFile(file) {
         var result=parseMarketBasket(e.target.result);
         setProc('Cruzando con guías…',80);
         setTimeout(function(){
-          EVALUATED=evaluateGuides(GUIDES,result.mbData,result.nameToCode);
+          // Save to localStorage
+          try {
+            var toSave={mbData:result.mbData, nameToCode:result.nameToCode, ts:Date.now(), fileName:file.name};
+            localStorage.setItem(MB_STORAGE_KEY, JSON.stringify(toSave));
+          } catch(se){ console.warn('No se pudo guardar en localStorage:', se); }
           setProc('Listo',100);
           setTimeout(function(){
-            document.getElementById('eval-proc').style.display='none';
-            document.getElementById('eval-results').style.display='block';
-            document.getElementById('countBadge').textContent=EVALUATED.length+' guías evaluadas';
-            renderStats(); renderEvalGrid();
+            applyMBResult(result, Date.now(), file.name);
           },300);
         },100);
       }catch(err){
@@ -746,7 +826,10 @@ function parseMarketBasket(buf) {
   var n2c={};
   for(var rr in rowIsAgg){
     if(rowIsAgg[rr]&&rowCode[rr]&&rowName[rr]){
+      // index by original AND uppercase+trimmed for case-insensitive matching
+      var normName=rowName[rr].trim().toUpperCase();
       n2c[rowName[rr]]=rowCode[rr];
+      n2c[normName]=rowCode[rr];
       if(mbData[rowCode[rr]]) mbData[rowCode[rr]].name=rowName[rr];
     }
   }
@@ -776,10 +859,10 @@ function evaluateGuides(guides, mbData, n2c) {
         var intl=0, extl=0, ep=[], ip=[];
         Object.entries(mb.co).forEach(function(en){
           var cn=en[0], cnt=+en[1];
-          var cc=n2c[cn]||gn2c[cn]||null;
+          var cnU=cn.trim().toUpperCase();
+          var cc=n2c[cn]||n2c[cnU]||gn2c[cn]||gn2c[cnU]||null;
           if(cc&&gc[cc]){intl+=cnt;ip.push({name:cn,code:cc,count:cnt});}
           else if(!isExcluded(cn)){extl+=cnt;ep.push({name:cn,code:cc||null,count:cnt});}
-          // sublíneas excluidas (servicios, obsequios, etc.) se ignoran completamente
         });
         ep.sort(function(a,b){return b.count-a.count;});
         ip.sort(function(a,b){return b.count-a.count;});
@@ -830,9 +913,9 @@ function renderEvalGrid(){
     allExt.sort(function(a,b){return b.count-a.count;});
     var extH=g.hasData
       ? allExt.slice(0,3).map(function(e){
-          var img=e.code?CODE_IMG[e.code]:null;
-          var imgTag=img?'<img class="ext-item-img" src="'+img+'" onerror="this.style.display=\'none\'"/>':'';
-          return '<div class="ext-item">'+imgTag+'<span class="ext-name">'+e.name+(e.code?' <span style="color:#ccc;font-size:10px">['+e.code+']</span>':'')+'</span><span>'+fn(e.count)+'</span></div>';
+          var r=resolveExt(e);
+          var imgTag=r.img?'<img class="ext-item-img" src="'+r.img+'" onerror="this.style.display=\'none\'"/>':'';
+          return '<div class="ext-item">'+imgTag+'<span class="ext-name">'+e.name+(r.code?' <span style="color:#ccc;font-size:10px">['+r.code+']</span>':'')+'</span><span>'+fn(e.count)+' veces</span></div>';
         }).join('')
       : '<div class="nodata-msg">Sin datos en market basket</div>';
     return '<div class="gcard" onclick="openEModal(\''+g.code+'\')">' +
@@ -869,23 +952,23 @@ function openEModal(code){
       if(p.noData) extH2='<span style="color:#aaa;font-size:11px">Sin datos en market basket</span>';
       else if(!p.topExternal.length) extH2='<span style="color:#2E7D32;font-size:11px">✓ Vende 100% dentro de la guía</span>';
       else p.topExternal.forEach(function(e){
-        var img=e.code?CODE_IMG[e.code]:null;
-        var imgId=e.code?'ei-'+e.code+'-'+Math.random().toString(36).slice(2):'';
-        var imgTag=img
-          ?'<img class="ext-prod-img" src="'+img+'" onerror="this.classList.add(\'ph\');this.src=\'\'"/>'
+        var r=resolveExt(e);
+        var imgId='ei-'+Math.random().toString(36).slice(2);
+        var imgTag=r.img
+          ?'<img class="ext-prod-img" src="'+r.img+'" onclick="zoomImg(\''+r.img+'\')" style="cursor:zoom-in" onerror="this.classList.add(\'ph\');this.removeAttribute(\'onclick\');this.src=\'\'"/>'
           :'<div class="ext-prod-img ph" id="'+imgId+'"></div>';
         extH2+='<div class="ext-prod-row">'+imgTag+
           '<div class="ext-prod-info"><div class="ext-prod-name">'+e.name+'</div>'+
-          (e.code?'<div class="ext-prod-meta">Cód: '+e.code+'</div>':'')+'</div>'+
-          '<span class="ext-prod-count">'+fn(e.count)+'×</span></div>';
-        // Lazy fetch if no image yet
-        if(!img && e.code) {
+          (r.code?'<div class="ext-prod-meta">Cód: '+r.code+'</div>':'<div class="ext-prod-meta" style="color:#ddd">Código no disponible</div>')+'</div>'+
+          '<span class="ext-prod-count">'+fn(e.count)+' veces</span></div>';
+        // Lazy API fetch for codes still missing an image
+        if(!r.img && r.code) {
           (function(code, id){
             fetchProductImg(code, function(src){
               var el=document.getElementById(id);
-              if(el){ var img2=document.createElement('img'); img2.className='ext-prod-img'; img2.src=src; img2.onerror=function(){this.classList.add('ph');}; el.parentNode.replaceChild(img2,el); }
+              if(el){ var img2=document.createElement('img'); img2.className='ext-prod-img'; img2.style.cursor='zoom-in'; img2.src=src; img2.onclick=function(){zoomImg(src);}; img2.onerror=function(){this.classList.add('ph');}; el.parentNode.replaceChild(img2,el); }
             });
-          })(e.code, imgId);
+          })(r.code, imgId);
         }
       });
       var intH='';
@@ -898,7 +981,20 @@ function openEModal(code){
   document.getElementById('eoverlay').classList.add('open');
 }
 function closeEModal(e){if(!e||e.target===document.getElementById('eoverlay'))document.getElementById('eoverlay').classList.remove('open');}
-document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeModal();closeEModal();}});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){closeModal();closeEModal();document.getElementById('img-zoom-overlay').classList.remove('open');}
+});
+function zoomImg(src){
+  document.getElementById('img-zoom-src').src=src;
+  document.getElementById('img-zoom-overlay').classList.add('open');
+}
+
+// Resolve best img + code for an external product entry
+function resolveExt(e) {
+  var code = e.code || NAME_CODE[e.name.toUpperCase()] || null;
+  var img  = (code && CODE_IMG[code]) || NAME_IMG[e.name.toUpperCase()] || null;
+  return {code: code, img: img};
+}
 </script>
 </body>
 </html>
