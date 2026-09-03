@@ -218,9 +218,11 @@ footer{text-align:center;padding:20px;font-size:11px;color:#aaa;border-top:1px s
     <input type="text" id="searchInput" placeholder="Buscar guia, producto o codigo..." oninput="render()"/>
   </div>
   <div class="fbtns" id="guide-filters">
-    <button class="fb active" onclick="setFilter('all',this)">Todas</button>
-    <button class="fb" onclick="setFilter('DOR',this)">Dormitorio</button>
-    <button class="fb" onclick="setFilter('SOC',this)">Social</button>
+    <button class="fb active" data-all="1" onclick="setFilter('all',this)">Todas</button>
+  </div>
+  <div class="sw" id="sw-eval-wrap" style="display:none">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="evalSearchInput" placeholder="Buscar guía por código o nombre..." oninput="renderEvalGrid()"/>
   </div>
   <div class="fbtns">
     <button class="fb eval-tab" id="eval-tab-btn" onclick="toggleEval(this)">&#128202; Evaluación</button>
@@ -294,7 +296,7 @@ footer{text-align:center;padding:20px;font-size:11px;color:#aaa;border-top:1px s
 
 <script>
 // ─── State ─────────────────────────────────────────────────────────────────
-var GUIDES = [], SAP = {}, SAPD = {}, activeFilter = 'all', currentGuide = null;
+var GUIDES = [], SAP = {}, SAPD = {}, CAT_DATA = {}, activeFilter = 'all', currentGuide = null;
 var evalMode = false, EVALUATED = [];
 var CODE_IMG  = {}; // code  → image URL
 var NAME_IMG  = {}; // name  → image URL  (fallback when code unknown)
@@ -345,6 +347,7 @@ fetch('guides.json?v='+Date.now())
         });
       });
     });
+    buildFilterButtons();
     render();
     // Guides ready — try restoring saved market basket
     tryRestoreFromStorage();
@@ -357,6 +360,11 @@ fetch('guides.json?v='+Date.now())
 fetch('sap_data.json?v='+Date.now())
   .then(function(r){return r.json();})
   .then(function(d){SAP=d; SAPD=d.products||d; render();})
+  .catch(function(){});
+
+fetch('cat_data.json?v='+Date.now())
+  .then(function(r){return r.json();})
+  .then(function(d){CAT_DATA=d; buildFilterButtons(); render();})
   .catch(function(){});
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -385,6 +393,49 @@ function guideNeedsReview(g) {
   });
 }
 
+// ─── Category helpers ───────────────────────────────────────────────────────
+function guideCategory(g) {
+  var p1 = g.pisos['1'] || [];
+  var cats = {};
+  p1.forEach(function(p) {
+    var info = CAT_DATA[p.c];
+    if (info && info.c) cats[info.c] = true;
+  });
+  var keys = Object.keys(cats);
+  if (keys.length === 0) return 'OTRAS';
+  if (keys.length === 1) return keys[0];
+  return 'INTEGRAL';
+}
+
+function buildFilterButtons() {
+  var catSet = {};
+  GUIDES.forEach(function(g) { catSet[guideCategory(g)] = true; });
+  var container = document.getElementById('guide-filters');
+  // Keep only the "Todas" button, remove previous dynamic buttons
+  var allBtn = container.querySelector('[data-all]');
+  container.innerHTML = '';
+  if (allBtn) container.appendChild(allBtn);
+  // Sort: single categories alphabetically, INTEGRAL last, OTRAS last
+  var cats = Object.keys(catSet)
+    .filter(function(c){ return c !== 'INTEGRAL' && c !== 'OTRAS'; })
+    .sort();
+  if (catSet['INTEGRAL']) cats.push('INTEGRAL');
+  if (catSet['OTRAS']) cats.push('OTRAS');
+  cats.forEach(function(cat) {
+    var btn = document.createElement('button');
+    btn.className = 'fb';
+    btn.textContent = cat[0] + cat.slice(1).toLowerCase();
+    btn.onclick = (function(c){ return function(){ setFilter(c, this); }; })(cat);
+    container.appendChild(btn);
+  });
+  // Re-apply active state
+  container.querySelectorAll('.fb').forEach(function(b) {
+    b.classList.toggle('active',
+      (b.dataset.all && activeFilter === 'all') ||
+      (b.textContent.toUpperCase() === activeFilter));
+  });
+}
+
 // ─── Tab toggle ─────────────────────────────────────────────────────────────
 function toggleEval(btn) {
   evalMode = !evalMode;
@@ -392,9 +443,11 @@ function toggleEval(btn) {
   document.getElementById('guides-view').style.display  = evalMode ? 'none' : 'block';
   document.getElementById('eval-section').style.display = evalMode ? 'block' : 'none';
   document.getElementById('htitle').textContent = evalMode ? 'Guías de Exhibición — Evaluación' : 'Guías de Exhibición';
-  document.getElementById('bulk-btns').style.display    = evalMode ? 'none' : 'flex';
-  document.getElementById('sw-wrap').style.display      = evalMode ? 'none' : 'block';
+  document.getElementById('bulk-btns').style.display     = evalMode ? 'none' : 'flex';
+  document.getElementById('sw-wrap').style.display       = evalMode ? 'none' : 'block';
+  document.getElementById('sw-eval-wrap').style.display  = evalMode ? 'block' : 'none';
   document.getElementById('guide-filters').style.display = evalMode ? 'none' : 'flex';
+  if(!evalMode) document.getElementById('evalSearchInput').value='';
   document.getElementById('countBadge').textContent = evalMode
     ? (EVALUATED.length ? EVALUATED.length+' guías evaluadas' : 'Sube el archivo')
     : GUIDES.length+' guías';
@@ -420,7 +473,7 @@ function setFilter(f, btn) {
 function render() {
   var q = document.getElementById('searchInput').value.toLowerCase().trim();
   var vis = GUIDES.filter(function(g) {
-    if (activeFilter !== 'all' && g.code.indexOf(activeFilter) !== 0) return false;
+    if (activeFilter !== 'all' && guideCategory(g) !== activeFilter) return false;
     if (q) {
       var gm = g.code.toLowerCase().indexOf(q) !== -1 || g.name.toLowerCase().indexOf(q) !== -1;
       if (!gm) {
@@ -696,6 +749,19 @@ function downloadAllXLSX() {
     ws['!cols']=[{wch:8},{wch:14},{wch:50},{wch:12},{wch:12},{wch:10}];
     XLSX.utils.book_append_sheet(wb,ws,g.code.substring(0,31));
   });
+  // Hoja Maestro: todos los códigos de todas las guías
+  var masterRows=[['Código','Nombre Guía','Categoría','Línea','Sublínea','Piso']];
+  GUIDES.forEach(function(g){
+    Object.keys(g.pisos).sort().forEach(function(piso){
+      g.pisos[piso].forEach(function(p){
+        var info=CAT_DATA[p.c]||{};
+        masterRows.push([p.c, g.name, info.c||'', info.l||'', info.s||'', piso]);
+      });
+    });
+  });
+  var wsMaster=XLSX.utils.aoa_to_sheet(masterRows);
+  wsMaster['!cols']=[{wch:14},{wch:40},{wch:14},{wch:32},{wch:32},{wch:8}];
+  XLSX.utils.book_append_sheet(wb,wsMaster,'Maestro');
   XLSX.writeFile(wb,'Guias_Exhibicion_Jamar_Completo.xlsx');
 }
 
@@ -920,11 +986,16 @@ function renderStats(){
 }
 
 function renderEvalGrid(){
-  var items=EVALUATED.slice().sort(function(a,b){
+  var q=(document.getElementById('evalSearchInput').value||'').toLowerCase().trim();
+  var items=EVALUATED.filter(function(g){
+    if(!q) return true;
+    return g.code.toLowerCase().indexOf(q)!==-1 || g.name.toLowerCase().indexOf(q)!==-1;
+  }).slice().sort(function(a,b){
     if(a.cohesion===null&&b.cohesion===null) return 0;
     if(a.cohesion===null) return 1; if(b.cohesion===null) return -1;
     return b.cohesion-a.cohesion;
   });
+  document.getElementById('countBadge').textContent=items.length+(q?' resultados':' guías evaluadas');
   var bc={green:'#2E7D32',yellow:'#F57F17',red:'#C8102E',gray:'#aaa'};
   document.getElementById('eval-grid').innerHTML=items.map(function(g){
     var t=tl(g.cohesion), bw=g.cohesion||0, pt=g.cohesion!==null?g.cohesion+'%':'Sin datos';
