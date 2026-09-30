@@ -457,8 +457,8 @@ function toggleEval(btn) {
       document.getElementById('eval-results').style.display='block';
       if (SAVED_MB_META) showUpdateBar(SAVED_MB_META.ts, SAVED_MB_META.fileName);
       document.getElementById('countBadge').textContent=EVALUATED.length+' guías evaluadas';
+      renderStats(); renderEvalGrid();
     }
-    // tryRestoreFromStorage already runs after guides load; nothing extra needed here
   }
 }
 
