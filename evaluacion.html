@@ -475,7 +475,7 @@ function render() {
   var vis = GUIDES.filter(function(g) {
     if (activeFilter !== 'all' && guideCategory(g) !== activeFilter) return false;
     if (q) {
-      var gm = g.code.toLowerCase().indexOf(q) !== -1 || g.name.toLowerCase().indexOf(q) !== -1;
+      var gm = (g.code||'').toLowerCase().indexOf(q) !== -1 || (g.name||'').toLowerCase().indexOf(q) !== -1;
       if (!gm) {
         var pr = [];
         Object.values(g.pisos).forEach(function(a){pr=pr.concat(a);});
@@ -989,7 +989,7 @@ function renderEvalGrid(){
   var q=(document.getElementById('evalSearchInput').value||'').toLowerCase().trim();
   var items=EVALUATED.filter(function(g){
     if(!q) return true;
-    return g.code.toLowerCase().indexOf(q)!==-1 || g.name.toLowerCase().indexOf(q)!==-1;
+    return (g.code||'').toLowerCase().indexOf(q)!==-1 || (g.name||'').toLowerCase().indexOf(q)!==-1;
   }).slice().sort(function(a,b){
     if(a.cohesion===null&&b.cohesion===null) return 0;
     if(a.cohesion===null) return 1; if(b.cohesion===null) return -1;
