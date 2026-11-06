@@ -1,26 +1,43 @@
-import urllib.request, urllib.error, json, base64, sys, os, datetime
+import urllib.request, urllib.error, json, base64, sys, os, datetime, time
 
 BASE = 'https://prd.appsjamar.com/ecommerce/ambientes/v1'
+MAX_RETRIES = 3
+RETRY_DELAY = 8  # seconds between retries
+
+def fetch_with_retry(url, retries=MAX_RETRIES):
+    """Fetch a URL with retries. Returns (data, True) on success, (error_msg, False) on failure."""
+    last_error = None
+    for attempt in range(1, retries + 1):
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        try:
+            with urllib.request.urlopen(req, timeout=45) as r:
+                return json.loads(r.read().decode('utf-8')), True
+        except urllib.error.HTTPError as e:
+            last_error = f'HTTP {e.code} {e.reason}'
+        except urllib.error.URLError as e:
+            last_error = f'URLError: {e.reason}'
+        except Exception as e:
+            last_error = f'{type(e).__name__}: {e}'
+
+        if attempt < retries:
+            print(f'    intento {attempt} fallido ({last_error}), reintentando en {RETRY_DELAY}s...')
+            time.sleep(RETRY_DELAY)
+
+    return last_error, False
 
 def fetch_all_products(code):
-    """Fetch ALL products for a guide via the /1 endpoint.
-    The API returns all products regardless of piso in this call.
-    Each product has a 'piso' field indicating its actual floor.
-    Returns (list, True) on success, (None, False) on any error."""
     url = f'{BASE}/ambiente_detail/list/JA/{code}/1'
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            data = json.loads(r.read().decode('utf-8'))
-            return (data if isinstance(data, list) else []), True
-    except Exception:
-        return None, False
+    data, ok = fetch_with_retry(url)
+    if ok:
+        return (data if isinstance(data, list) else []), True
+    return data, False  # data contains the error message
 
 def fetch_ambientes():
     url = f'{BASE}/ambientes/list/JA'
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        return json.loads(r.read().decode('utf-8'))
+    data, ok = fetch_with_retry(url)
+    if ok:
+        return data
+    raise Exception(f'No se pudo obtener ambientes: {data}')
 
 # --- Load existing guides.json from GitHub (fallback on API failure) ---
 token = os.environ['GITHUB_TOKEN']
@@ -53,6 +70,8 @@ if not ambientes:
 # --- Build guides: single API call per guide, group by product's piso field ---
 guides = []
 had_api_errors = False
+error_count = 0
+success_count = 0
 
 for amb in ambientes:
     code = amb['codigo_ambiente']
@@ -61,19 +80,21 @@ for amb in ambientes:
     products, success = fetch_all_products(code)
 
     if not success:
-        # API completely failed - preserve entire existing guide if we have it
         had_api_errors = True
+        error_count += 1
         existing = existing_guides.get(code)
         if existing:
             guides.append(existing)
-            print(f'  [{code}] API error -> keeping entire existing guide ({sum(len(v) for v in existing["pisos"].values())} products)')
+            print(f'  [{code}] FALLO ({products}) -> conservando guia existente ({sum(len(v) for v in existing["pisos"].values())} productos)')
         else:
-            print(f'  [{code}] API error -> no existing data, skipping')
+            print(f'  [{code}] FALLO ({products}) -> guia nueva sin datos previos, OMITIDA')
         continue
 
     if not products:
-        print(f'  [{code}] No products returned, skipping')
+        print(f'  [{code}] Sin productos, omitiendo')
         continue
+
+    success_count += 1
 
     # Group active products by their 'piso' field
     pisos = {}
@@ -97,19 +118,20 @@ for amb in ambientes:
 
 multi_result = sum(1 for g in guides if len(g['pisos']) > 1)
 print(f'Result: {len(guides)} guides, {multi_result} with 2+ pisos')
+print(f'API calls: {success_count} exitosas, {error_count} fallidas')
 if had_api_errors:
-    print('NOTE: Some guides had API errors - existing data was preserved for those.')
+    print(f'ADVERTENCIA: {error_count} guias usaron datos de respaldo.')
 
 # --- Push to GitHub ---
 new_content = json.dumps(guides, ensure_ascii=False, indent=2)
 if new_content.strip() == current_content.strip():
-    print('No changes. guides.json is already up to date.')
+    print('Sin cambios. guides.json ya esta actualizado.')
     sys.exit(0)
 
 new_b64 = base64.b64encode(new_content.encode('utf-8')).decode('ascii')
 msg = f'Auto-sync: {len(guides)} guias [{datetime.date.today()}]'
 if had_api_errors:
-    msg += ' [fallback parcial]'
+    msg += f' [fallback parcial: {error_count} guias]'
 payload = json.dumps({'message': msg, 'content': new_b64, 'sha': sha}).encode('utf-8')
 req = urllib.request.Request(api_url, data=payload, method='PUT', headers={
     'Authorization': f'token {token}',
@@ -118,4 +140,4 @@ req = urllib.request.Request(api_url, data=payload, method='PUT', headers={
 })
 with urllib.request.urlopen(req) as r:
     result = json.loads(r.read().decode('utf-8'))
-    print(f'UPDATED: commit {result["commit"]["sha"][:8]} - {len(guides)} guias, {multi_result} multi-piso')
+    print(f'ACTUALIZADO: commit {result["commit"]["sha"][:8]} - {len(guides)} guias, {multi_result} multi-piso')
